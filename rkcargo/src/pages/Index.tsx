@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import PublicLayout from "@/components/layout/PublicLayout";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { API_BASE_URL } from "@/config";
 
 // Animated counter hook
 function useCounter(target: number, duration = 1800, startOnView = true) {
@@ -200,6 +204,82 @@ const FAQ = ({ q, a }: { q: string; a: string }) => {
 };
 
 const Index = () => {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [formName, setFormName] = useState("");
+  const [formRating, setFormRating] = useState(5);
+  const [formReview, setFormReview] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/reviews`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setReviews(data);
+      } else {
+        // Fallback to static testimonials
+        setReviews(testimonials.map((t, idx) => ({
+          id: -idx,
+          name: t.name,
+          rating: t.rating,
+          review: t.text,
+          city: t.city || "Verified Customer",
+          admin_reply: null,
+          created_at: new Date().toISOString()
+        })));
+      }
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+      // Fallback
+      setReviews(testimonials.map((t, idx) => ({
+        id: -idx,
+        name: t.name,
+        rating: t.rating,
+        review: t.text,
+        city: t.city || "Verified Customer",
+        admin_reply: null,
+        created_at: new Date().toISOString()
+      })));
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName || !formReview) {
+      toast.error("Please fill out all fields.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formName,
+          rating: formRating,
+          review: formReview
+        })
+      });
+      if (res.ok) {
+        toast.success("Thank you! Your review has been submitted for approval.");
+        setFormName("");
+        setFormRating(5);
+        setFormReview("");
+      } else {
+        toast.error("Failed to submit review. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred. Please try again later.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <PublicLayout>
       {/* ── Hero ── */}
@@ -448,25 +528,108 @@ const Index = () => {
             </motion.p>
           </motion.div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.article key={t.name} variants={fadeUp} custom={i} whileHover={{ y: -4, scale: 1.01 }} className="bg-card rounded-2xl p-6 shadow-card border border-border cursor-default">
-                <div className="flex gap-1 mb-3">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-accent text-accent" />
-                  ))}
+            {reviews.map((r, i) => (
+              <motion.article key={r.id} variants={fadeUp} custom={i} whileHover={{ y: -4, scale: 1.01 }} className="bg-card rounded-2xl p-6 shadow-card border border-border cursor-default flex flex-col justify-between">
+                <div>
+                  <div className="flex gap-1 mb-3">
+                    {Array.from({ length: r.rating }).map((_, j) => (
+                      <Star key={j} className="w-4 h-4 fill-accent text-accent" />
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-4 italic">"{r.review}"</p>
+                  
+                  {r.admin_reply && (
+                    <div className="mt-4 p-3 rounded-lg bg-muted text-xs border-l-2 border-accent">
+                      <p className="font-semibold text-foreground mb-1">Reply from RK Cargo:</p>
+                      <p className="text-muted-foreground italic">"{r.admin_reply}"</p>
+                    </div>
+                  )}
                 </div>
-                <p className="text-muted-foreground text-sm leading-relaxed mb-4 italic">"{t.text}"</p>
-                <div className="flex items-center gap-3">
+                
+                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border/50">
                   <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    {t.name[0]}
+                    {r.name[0]}
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-foreground">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.city}</p>
+                    <p className="font-semibold text-sm text-foreground">{r.name}</p>
+                    <p className="text-xs text-muted-foreground">{r.city || "Verified Customer"}</p>
                   </div>
                 </div>
               </motion.article>
             ))}
+          </motion.div>
+
+          {/* Write a Review Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-16 max-w-xl mx-auto bg-card rounded-2xl p-8 shadow-card border border-border"
+          >
+            <div className="text-center mb-6">
+              <h3 className="font-display text-xl font-bold text-foreground">Share Your Experience</h3>
+              <p className="text-xs text-muted-foreground mt-1">Your feedback helps us serve you better</p>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Your Name *</label>
+                <Input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Rating *</label>
+                <div className="flex gap-1.5 items-center">
+                  {Array.from({ length: 5 }).map((_, idx) => {
+                    const starValue = idx + 1;
+                    return (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setFormRating(starValue)}
+                        className="p-0.5 transition-transform hover:scale-125 focus:outline-none"
+                      >
+                        <Star
+                          className={`w-7 h-7 ${
+                            starValue <= formRating
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-gray-300 hover:text-amber-300"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                  <span className="text-xs font-semibold text-muted-foreground ml-2">
+                    {formRating} / 5 Stars
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Review Description *</label>
+                <Textarea
+                  placeholder="Describe your shifting or transport experience..."
+                  value={formReview}
+                  onChange={(e) => setFormReview(e.target.value)}
+                  className="min-h-[100px] resize-y"
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full gradient-accent text-accent-foreground font-semibold border-0 py-2.5 shadow-md animate-pulse-glow"
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </Button>
+            </form>
           </motion.div>
         </div>
       </section>

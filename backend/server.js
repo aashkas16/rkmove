@@ -1038,6 +1038,117 @@ app.get("/dashboard/activity", (req, res) => {
   );
 });
 
+// ================= REVIEWS =================
+
+// GET approved reviews (public)
+app.get("/reviews", (req, res) => {
+  db.query(
+    "SELECT * FROM reviews WHERE status = 'approved' ORDER BY created_at DESC",
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      res.send(result);
+    }
+  );
+});
+
+// GET all reviews (admin)
+app.get("/admin/reviews", (req, res) => {
+  db.query(
+    "SELECT * FROM reviews ORDER BY created_at DESC",
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      res.send(result);
+    }
+  );
+});
+
+// ADD review (public)
+app.post("/reviews", (req, res) => {
+  const { name, rating, review } = req.body;
+  db.query(
+    "INSERT INTO reviews (name, rating, review, status) VALUES (?, ?, ?, 'pending')",
+    [name, rating, review],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      res.send("Review Submitted");
+    }
+  );
+});
+
+// APPROVE review (admin)
+app.put("/reviews/:id/approve", (req, res) => {
+  const id = req.params.id;
+  db.query(
+    "UPDATE reviews SET status = 'approved' WHERE id = ?",
+    [id],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      res.send("Review Approved");
+    }
+  );
+});
+
+// REPLY to review (admin)
+app.put("/reviews/:id/reply", (req, res) => {
+  const id = req.params.id;
+  const { admin_reply } = req.body;
+  db.query(
+    "UPDATE reviews SET admin_reply = ? WHERE id = ?",
+    [admin_reply, id],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      res.send("Reply Saved");
+    }
+  );
+});
+
+// DELETE review (admin)
+app.delete("/reviews/:id", (req, res) => {
+  const id = req.params.id;
+  db.query(
+    "DELETE FROM reviews WHERE id = ?",
+    [id],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      res.send("Review Deleted");
+    }
+  );
+});
+
+// ================= PASSWORD RESET =================
+
+// Verify Admin password
+app.post("/admins/:id/verify-password", (req, res) => {
+  const id = req.params.id;
+  const { password } = req.body;
+  db.query(
+    "SELECT password FROM admins WHERE id = ?",
+    [id],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: "Database error" });
+      if (result.length === 0) return res.status(404).json({ message: "Admin not found" });
+      if (result[0].password !== password) {
+        return res.status(401).json({ message: "Incorrect password" });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+// Reset Admin password
+app.put("/admins/:id/reset-password", (req, res) => {
+  const id = req.params.id;
+  const { password } = req.body;
+  db.query(
+    "UPDATE admins SET password = ? WHERE id = ?",
+    [password, id],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: "Database error" });
+      res.json({ success: true, message: "Password updated successfully" });
+    }
+  );
+});
+
 // ================= LOGIN =================
 app.post("/login", (req, res) => {
   const { email, password } = req.body;

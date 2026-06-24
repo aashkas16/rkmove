@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 //import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Mail, MailOpen, Trash2 } from "lucide-react";
+import { Search, Mail, MailOpen, Trash2, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,16 @@ const AdminContacts = () => {
   const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
+  const [showViewer, setShowViewer] = useState(false);
+
+  const handleViewMessage = (sub: ContactSubmission) => {
+    setSelectedSubmission(sub);
+    setShowViewer(true);
+    if (!sub.is_read) {
+      toggleRead(sub);
+    }
+  };
 
  const fetchSubmissions = async () => {
 
@@ -155,9 +166,14 @@ const AdminContacts = () => {
                   <TableCell className="font-medium">{sub.name}</TableCell>
                   <TableCell>{sub.phone}</TableCell>
                   <TableCell className="text-sm">{sub.email}</TableCell>
-                  <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">{sub.message}</TableCell>
+                  <TableCell onClick={() => handleViewMessage(sub)} className="max-w-[200px] truncate text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors hover:underline">
+                    {sub.message}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleViewMessage(sub)} title="View full message">
+                      <Eye className="w-4 h-4 text-blue-600" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => toggleRead(sub)} title={sub.is_read ? "Mark unread" : "Mark read"}>
                       {sub.is_read ? <Mail className="w-4 h-4" /> : <MailOpen className="w-4 h-4" />}
                     </Button>
@@ -171,6 +187,50 @@ const AdminContacts = () => {
           </Table>
         </div>
       </div>
+
+      {/* Message Viewer Dialog */}
+      <Dialog open={showViewer} onOpenChange={setShowViewer}>
+        <DialogContent className="max-w-md w-[90vw] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Contact Submission Details</DialogTitle>
+            <DialogDescription>
+              Submitted on {selectedSubmission && new Date(selectedSubmission.created_at).toLocaleString()}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSubmission && (
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="block text-xs font-semibold text-muted-foreground uppercase">From Name</span>
+                  <span className="font-semibold text-foreground">{selectedSubmission.name}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-muted-foreground uppercase">Phone</span>
+                  <span className="text-foreground">{selectedSubmission.phone}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="block text-xs font-semibold text-muted-foreground uppercase">Email Address</span>
+                  <a href={`mailto:${selectedSubmission.email}`} className="text-blue-600 hover:underline">{selectedSubmission.email}</a>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-3">
+                <span className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Message Body</span>
+                <p className="text-sm text-foreground bg-muted p-4 rounded-xl leading-relaxed whitespace-pre-wrap max-h-[250px] overflow-y-auto">
+                  {selectedSubmission.message}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setShowViewer(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/config";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // Animated counter hook
 function useCounter(target: number, duration = 1800, startOnView = true) {
@@ -209,6 +210,7 @@ const Index = () => {
   const [formRating, setFormRating] = useState(5);
   const [formReview, setFormReview] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   const fetchReviews = async () => {
     try {
@@ -269,6 +271,7 @@ const Index = () => {
         setFormName("");
         setFormRating(5);
         setFormReview("");
+        setShowReviewModal(false);
       } else {
         toast.error("Failed to submit review. Please try again.");
       }
@@ -518,14 +521,22 @@ const Index = () => {
       {/* ── Testimonials ── */}
       <section className="py-20 bg-background" aria-labelledby="testimonials-heading">
         <div className="container mx-auto px-4">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-14">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col items-center text-center mb-14">
             <motion.p variants={fadeUp} custom={0} className="text-accent font-semibold text-sm uppercase tracking-wider mb-2">Customer Reviews</motion.p>
             <motion.h2 id="testimonials-heading" variants={fadeUp} custom={1} className="font-display text-3xl md:text-4xl font-bold text-foreground">
               What Our Customers Say About Us
             </motion.h2>
-            <motion.p variants={fadeUp} custom={2} className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm">
+            <motion.p variants={fadeUp} custom={2} className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm mb-6">
               Over 50,000 happy customers across India trust RK Cargo for their relocation needs. Read their experiences.
             </motion.p>
+            <motion.div variants={fadeUp} custom={3}>
+              <Button
+                onClick={() => setShowReviewModal(true)}
+                className="gradient-accent text-accent-foreground font-semibold border-0 px-6 py-2.5 shadow-md hover:opacity-90 animate-pulse-glow"
+              >
+                Write a Review
+              </Button>
+            </motion.div>
           </motion.div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {reviews.map((r, i) => (
@@ -559,78 +570,77 @@ const Index = () => {
             ))}
           </motion.div>
 
-          {/* Write a Review Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-16 max-w-xl mx-auto bg-card rounded-2xl p-8 shadow-card border border-border"
-          >
-            <div className="text-center mb-6">
-              <h3 className="font-display text-xl font-bold text-foreground">Share Your Experience</h3>
-              <p className="text-xs text-muted-foreground mt-1">Your feedback helps us serve you better</p>
-            </div>
+          {/* Write a Review Dialog Modal */}
+          <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+            <DialogContent className="max-w-md w-[90vw] rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl font-bold text-center">Share Your Experience</DialogTitle>
+                <DialogDescription className="text-center text-xs text-muted-foreground">
+                  Your feedback helps us serve you better
+                </DialogDescription>
+              </DialogHeader>
 
-            <form onSubmit={handleSubmitReview} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Your Name *</label>
-                <Input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Rating *</label>
-                <div className="flex gap-1.5 items-center">
-                  {Array.from({ length: 5 }).map((_, idx) => {
-                    const starValue = idx + 1;
-                    return (
-                      <button
-                        type="button"
-                        key={idx}
-                        onClick={() => setFormRating(starValue)}
-                        className="p-0.5 transition-transform hover:scale-125 focus:outline-none"
-                      >
-                        <Star
-                          className={`w-7 h-7 ${
-                            starValue <= formRating
-                              ? "fill-amber-400 text-amber-400"
-                              : "text-gray-300 hover:text-amber-300"
-                          }`}
-                        />
-                      </button>
-                    );
-                  })}
-                  <span className="text-xs font-semibold text-muted-foreground ml-2">
-                    {formRating} / 5 Stars
-                  </span>
+              <form onSubmit={handleSubmitReview} className="space-y-4 mt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Your Name *</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your name"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    required
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Review Description *</label>
-                <Textarea
-                  placeholder="Describe your shifting or transport experience..."
-                  value={formReview}
-                  onChange={(e) => setFormReview(e.target.value)}
-                  className="min-h-[100px] resize-y"
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Rating *</label>
+                  <div className="flex gap-1.5 items-center">
+                    {Array.from({ length: 5 }).map((_, idx) => {
+                      const starValue = idx + 1;
+                      return (
+                        <button
+                          type="button"
+                          key={idx}
+                          onClick={() => setFormRating(starValue)}
+                          className="p-0.5 transition-transform hover:scale-125 focus:outline-none"
+                        >
+                          <Star
+                            className={`w-7 h-7 ${
+                              starValue <= formRating
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-gray-300 hover:text-amber-300"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                    <span className="text-xs font-semibold text-muted-foreground ml-2">
+                      {formRating} / 5 Stars
+                    </span>
+                  </div>
+                </div>
 
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full gradient-accent text-accent-foreground font-semibold border-0 py-2.5 shadow-md animate-pulse-glow"
-              >
-                {submitting ? "Submitting..." : "Submit Review"}
-              </Button>
-            </form>
-          </motion.div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Review Description *</label>
+                  <Textarea
+                    placeholder="Describe your shifting or transport experience..."
+                    value={formReview}
+                    onChange={(e) => setFormReview(e.target.value)}
+                    className="min-h-[100px] resize-y"
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full gradient-accent text-accent-foreground font-semibold border-0 py-2.5 shadow-md animate-pulse-glow"
+                >
+                  {submitting ? "Submitting..." : "Submit Review"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </section>
 

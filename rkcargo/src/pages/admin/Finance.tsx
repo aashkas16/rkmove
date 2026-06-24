@@ -3,7 +3,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, TrendingUp, TrendingDown, DollarSign, Download } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, DollarSign, Download, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -172,6 +172,42 @@ const AdminFinance = () => {
   }
 };
 
+  const handleDeleteIncome = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this income entry?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/income/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        toast.success("Income deleted successfully!");
+        fetchData();
+      } else {
+        toast.error("Failed to delete income");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error deleting income");
+    }
+  };
+
+  const handleDeleteExpense = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this expense entry?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/expenditure/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        toast.success("Expense deleted successfully!");
+        fetchData();
+      } else {
+        toast.error("Failed to delete expense");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error deleting expense");
+    }
+  };
+
   const exportExcel = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomeList.map(i => ({ Date: i.date, Client: i.client_name, LR: i.lr_number, Amount: i.amount, Mode: i.payment_mode }))), "Income");
@@ -243,7 +279,7 @@ const AdminFinance = () => {
             <div className="bg-card rounded-xl border border-border shadow-card overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>LR No.</TableHead><TableHead>Amount</TableHead><TableHead>Mode</TableHead>
+                  <TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>LR No.</TableHead><TableHead>Amount</TableHead><TableHead>Mode</TableHead><TableHead className="text-right">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {incomeList.length === 0 ? (
@@ -270,7 +306,17 @@ const AdminFinance = () => {
   <TableCell>
     {String(i.payment_mode || "")}
   </TableCell>
-
+  <TableCell className="text-right">
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => handleDeleteIncome(Number(i.id))}
+      className="text-destructive hover:text-destructive hover:bg-destructive/5"
+      title="Delete Income"
+    >
+      <Trash2 className="w-4 h-4" />
+    </Button>
+  </TableCell>
 </TableRow>
                   ))}
                 </TableBody>
@@ -281,7 +327,7 @@ const AdminFinance = () => {
             <div className="bg-card rounded-xl border border-border shadow-card overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Date</TableHead><TableHead>Category</TableHead><TableHead>Amount</TableHead><TableHead>Description</TableHead><TableHead>Vehicle</TableHead>
+                  <TableHead>Date</TableHead><TableHead>Category</TableHead><TableHead>Amount</TableHead><TableHead>Description</TableHead><TableHead>Vehicle</TableHead><TableHead className="text-right">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {expenseList.length === 0 ? (
@@ -308,7 +354,17 @@ const AdminFinance = () => {
   <TableCell className="text-xs">
     {String(e.vehicle_number || "-")}
   </TableCell>
-
+  <TableCell className="text-right">
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => handleDeleteExpense(Number(e.id))}
+      className="text-destructive hover:text-destructive hover:bg-destructive/5"
+      title="Delete Expense"
+    >
+      <Trash2 className="w-4 h-4" />
+    </Button>
+  </TableCell>
 </TableRow>
                   ))}
                 </TableBody>

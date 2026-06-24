@@ -469,6 +469,24 @@ app.post("/expenditure", (req, res) => {
   );
 });
 
+// DELETE income
+app.delete("/income/:id", (req, res) => {
+  const id = req.params.id;
+  db.query("DELETE FROM income WHERE id = ?", [id], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.send("Income Deleted");
+  });
+});
+
+// DELETE expenditure
+app.delete("/expenditure/:id", (req, res) => {
+  const id = req.params.id;
+  db.query("DELETE FROM expenditure WHERE id = ?", [id], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.send("Expense Deleted");
+  });
+});
+
 // ================= REPORTS =================
 
 // Parcel Report

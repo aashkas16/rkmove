@@ -20,6 +20,7 @@ import AdminVehicles from "./pages/admin/Vehicles";
 import AdminContacts from "./pages/admin/Contacts";
 import AdminManagement from "./pages/admin/AdminManagement";
 import AdminReviews from "./pages/admin/Reviews";
+import CustomerReviews from "./pages/Reviews";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/tracking" element={<Tracking />} />
+            <Route path="/reviews" element={<CustomerReviews />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/parcels" element={<ProtectedRoute><AdminParcels /></ProtectedRoute>} />

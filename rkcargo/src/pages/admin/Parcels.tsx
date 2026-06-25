@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, Edit2, Plus } from "lucide-react";
+import { Eye, Edit2, Plus, Trash2 } from "lucide-react";
 
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -228,6 +228,24 @@ try {
 
 };
 
+const handleDelete = async (id: number) => {
+  if (!confirm("Are you sure you want to delete this parcel?")) return;
+  try {
+    const res = await fetch(`${API_BASE_URL}/parcels/${id}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      toast.success("Parcel Deleted");
+      fetchParcels();
+    } else {
+      toast.error("Failed to delete parcel");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Error deleting parcel");
+  }
+};
+
 const filtered = parcels.filter((p) =>
 p.customer_name
 ?.toLowerCase()
@@ -334,6 +352,14 @@ balance: String(p.balance || ""),
                   }}
                 >
                   <Edit2 className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => handleDelete(p.id)}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
                 </Button>
 
               </TableCell>

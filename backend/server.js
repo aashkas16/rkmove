@@ -14,6 +14,22 @@ database: process.env.DB_NAME || "rkcargo",
 port: process.env.DB_PORT || 3306
 });
 
+// Auto-create notices table if not exists
+db.query(`
+  CREATE TABLE IF NOT EXISTS notices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`, (err) => {
+  if (err) {
+    console.error("Error creating notices table:", err);
+  } else {
+    console.log("Notices database table active.");
+  }
+});
+
 // ================= TEST =================
 app.get("/test", (req, res) => {
 res.send("Backend working");
@@ -1205,6 +1221,67 @@ app.get("/track", (req, res) => {
         return res.json(null);
       }
       res.json(result[0]);
+    }
+  );
+});
+
+// ================= NOTICES =================
+
+// GET all notices
+app.get("/notices", (req, res) => {
+  db.query("SELECT * FROM notices ORDER BY created_at DESC", (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Database error fetching notices" });
+    }
+    res.json(result);
+  });
+});
+
+// POST create notice
+app.post("/notices", (req, res) => {
+  const { title, content } = req.body;
+  if (!title || !content) {
+    return res.status(400).json({ message: "Title and content are required" });
+  }
+  db.query(
+    "INSERT INTO notices (title, content) VALUES (?, ?)",
+    [title, content],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Database error saving notice" });
+      }
+      res.status(201).json({ id: result.insertId, title, content, created_at: new Date() });
+    }
+  );
+});
+
+// DELETE notice
+app.delete("/notices/:id", (req, res) => {
+  const id = req.params.id;
+  db.query("DELETE FROM notices WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Database error deleting notice" });
+    }
+    res.json({ message: "Notice deleted successfully" });
+  });
+});
+
+// PUT update notice
+app.put("/notices/:id", (req, res) => {
+  const id = req.params.id;
+  const { title, content } = req.body;
+  db.query(
+    "UPDATE notices SET title = ?, content = ? WHERE id = ?",
+    [title, content, id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Database error updating notice" });
+      }
+      res.json({ id, title, content });
     }
   );
 });

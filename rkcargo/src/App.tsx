@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminParcels from "./pages/admin/Parcels";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminInvoices from "./pages/admin/Invoices";
+import AdminNotices from "./pages/admin/Notices";
 import AdminFinance from "./pages/admin/Finance";
 import AdminReports from "./pages/admin/Reports";
 import AdminVehicles from "./pages/admin/Vehicles";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/admin/parcels" element={<ProtectedRoute><AdminParcels /></ProtectedRoute>} />
             <Route path="/admin/customers" element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
             <Route path="/admin/invoices" element={<AdminInvoices />} />
+            <Route path="/admin/notices" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
             <Route path="/admin/finance" element={<ProtectedRoute><AdminFinance /></ProtectedRoute>} />
             <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
             <Route path="/admin/vehicles" element={<ProtectedRoute><AdminVehicles /></ProtectedRoute>} />

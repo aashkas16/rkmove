@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Users, FileText, DollarSign, BarChart3, Truck, LogOut, Menu, X, MessageSquare, Shield, Star } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, ClipboardList, DollarSign, BarChart3, Truck, LogOut, Menu, X, MessageSquare, Shield, Star } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ const links = [
 { label: "Parcels", path: "/admin/parcels", icon: Package },
 { label: "Customers", path: "/admin/customers", icon: Users },
 { label: "Invoices", path: "/admin/invoices", icon: FileText },
+{ label: "Ahmedabad Notice", path: "/admin/notices", icon: ClipboardList },
 { label: "Finance", path: "/admin/finance", icon: DollarSign },
 { label: "Reports", path: "/admin/reports", icon: BarChart3 },
 { label: "Vehicles", path: "/admin/vehicles", icon: Truck },

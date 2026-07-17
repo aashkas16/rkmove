@@ -20,6 +20,8 @@ db.query(`
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
+    document_date VARCHAR(255) NULL,
+    recipient TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
 `, (err) => {
@@ -27,6 +29,14 @@ db.query(`
     console.error("Error creating notices table:", err);
   } else {
     console.log("Notices database table active.");
+    
+    // Add columns dynamically for existing databases
+    db.query("ALTER TABLE notices ADD COLUMN document_date VARCHAR(255) NULL", (err) => {
+      // Ignore if column already exists
+    });
+    db.query("ALTER TABLE notices ADD COLUMN recipient TEXT NULL", (err) => {
+      // Ignore if column already exists
+    });
   }
 });
 
@@ -1240,19 +1250,19 @@ app.get("/notices", (req, res) => {
 
 // POST create notice
 app.post("/notices", (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, document_date, recipient } = req.body;
   if (!title || !content) {
     return res.status(400).json({ message: "Title and content are required" });
   }
   db.query(
-    "INSERT INTO notices (title, content) VALUES (?, ?)",
-    [title, content],
+    "INSERT INTO notices (title, content, document_date, recipient) VALUES (?, ?, ?, ?)",
+    [title, content, document_date || null, recipient || null],
     (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: "Database error saving notice" });
       }
-      res.status(201).json({ id: result.insertId, title, content, created_at: new Date() });
+      res.status(201).json({ id: result.insertId, title, content, document_date, recipient, created_at: new Date() });
     }
   );
 });
@@ -1272,16 +1282,16 @@ app.delete("/notices/:id", (req, res) => {
 // PUT update notice
 app.put("/notices/:id", (req, res) => {
   const id = req.params.id;
-  const { title, content } = req.body;
+  const { title, content, document_date, recipient } = req.body;
   db.query(
-    "UPDATE notices SET title = ?, content = ? WHERE id = ?",
-    [title, content, id],
+    "UPDATE notices SET title = ?, content = ?, document_date = ?, recipient = ? WHERE id = ?",
+    [title, content, document_date || null, recipient || null, id],
     (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: "Database error updating notice" });
       }
-      res.json({ id, title, content });
+      res.json({ id, title, content, document_date, recipient });
     }
   );
 });

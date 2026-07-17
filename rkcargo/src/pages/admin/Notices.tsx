@@ -25,6 +25,8 @@ interface Notice {
   id: number;
   title: string;
   content: string;
+  document_date?: string;
+  recipient?: string;
   created_at: string;
 }
 
@@ -36,12 +38,16 @@ const AdminNotices = () => {
   
   const [newForm, setNewForm] = useState({
     title: "",
-    content: ""
+    content: "",
+    document_date: "",
+    recipient: ""
   });
 
   const [editForm, setEditForm] = useState({
     title: "",
-    content: ""
+    content: "",
+    document_date: "",
+    recipient: ""
   });
 
   // Local storage fallback helper
@@ -68,6 +74,8 @@ const AdminNotices = () => {
       id: Date.now(),
       title: notice.title,
       content: notice.content,
+      document_date: notice.document_date,
+      recipient: notice.recipient,
       created_at: new Date().toISOString()
     };
     list.unshift(newItem);
@@ -122,13 +130,13 @@ const AdminNotices = () => {
       });
       if (!res.ok) throw new Error("API failed");
       toast.success("Document registered successfully!");
-      setNewForm({ title: "", content: "" });
+      setNewForm({ title: "", content: "", document_date: "", recipient: "" });
       fetchNotices();
     } catch (err) {
       console.warn("Backend post failed, writing to localStorage:", err);
       saveLocalNotice(newForm);
       toast.success("Document registered to local storage!");
-      setNewForm({ title: "", content: "" });
+      setNewForm({ title: "", content: "", document_date: "", recipient: "" });
       fetchNotices();
     }
   };
@@ -366,6 +374,21 @@ const AdminNotices = () => {
               </div>
               
               <div class="content-section">
+                ${(notice.recipient || notice.document_date) ? `
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-top: 10px; margin-bottom: 25px; font-family: inherit;">
+                    ${notice.recipient ? `
+                      <div style="text-align: left; font-size: 14px; color: #334155; white-space: pre-wrap; font-family: inherit;">
+                        <div style="font-weight: 700; color: #1e3a8a; margin-bottom: 4px;">To,</div>
+                        <div>${notice.recipient}</div>
+                      </div>
+                    ` : '<div></div>'}
+                    ${notice.document_date ? `
+                      <div style="text-align: right; font-size: 14px; color: #334155; font-weight: 700; font-family: inherit;">
+                        Date: ${notice.document_date}
+                      </div>
+                    ` : ''}
+                  </div>
+                ` : ''}
                 <div class="notice-title">${notice.title}</div>
                 <div>${notice.content}</div>
               </div>
@@ -440,6 +463,24 @@ const AdminNotices = () => {
                 />
               </div>
               <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">Document Date (Optional)</label>
+                <Input
+                  type="text"
+                  placeholder="e.g. 17/07/2026 or July 17, 2026"
+                  value={newForm.document_date}
+                  onChange={(e) => setNewForm(prev => ({ ...prev, document_date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">To / Recipient Name & Address (Optional)</label>
+                <Textarea
+                  rows={3}
+                  placeholder="e.g. Branch Manager&#10;Sabarmati Office, Ahmedabad"
+                  value={newForm.recipient}
+                  onChange={(e) => setNewForm(prev => ({ ...prev, recipient: e.target.value }))}
+                />
+              </div>
+              <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1">Body Text Content *</label>
                 <Textarea
                   rows={10}
@@ -489,7 +530,12 @@ const AdminNotices = () => {
                             size="icon"
                             onClick={() => {
                               setEditNotice(n);
-                              setEditForm({ title: n.title, content: n.content });
+                              setEditForm({
+                                title: n.title,
+                                content: n.content,
+                                document_date: n.document_date || "",
+                                recipient: n.recipient || ""
+                              });
                             }}
                           >
                             <Edit2 className="w-4 h-4 text-blue-600" />
@@ -525,6 +571,22 @@ const AdminNotices = () => {
               <Input
                 value={editForm.title}
                 onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Document Date (Optional)</label>
+              <Input
+                type="text"
+                value={editForm.document_date}
+                onChange={(e) => setEditForm(prev => ({ ...prev, document_date: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">To / Recipient Details (Optional)</label>
+              <Textarea
+                rows={3}
+                value={editForm.recipient}
+                onChange={(e) => setEditForm(prev => ({ ...prev, recipient: e.target.value }))}
               />
             </div>
             <div>
@@ -578,6 +640,23 @@ const AdminNotices = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Date & Recipient Details */}
+                {(viewNotice.recipient || viewNotice.document_date) && (
+                  <div className="flex justify-between items-start mb-6 mt-6">
+                    {viewNotice.recipient ? (
+                      <div className="text-sm text-gray-700" style={{ whiteSpace: "pre-wrap", textAlign: "left" }}>
+                        <div className="font-bold text-blue-900 mb-1">To,</div>
+                        <div>{viewNotice.recipient}</div>
+                      </div>
+                    ) : <div />}
+                    {viewNotice.document_date && (
+                      <div className="text-sm font-bold text-gray-700 text-right">
+                        Date: {viewNotice.document_date}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Content */}
                 <div className="mt-8 mb-16 text-sm leading-relaxed">

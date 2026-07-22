@@ -208,9 +208,8 @@ function generateQuotationFront(data: DocData): string {
     <img src="${LOGO_URL}" style="width:70px;height:auto;" />
     <div style="flex:1;text-align:center;">
       <div style="font-size:24px;font-weight:900;color:#1a237e;letter-spacing:1px;">R. K. CARGO PACKERS & MOVERS</div>
-      <div style="font-size:9px;color:#333;">Office No. 12, Lavkush Complex Opp. Green Villa D-cabin, Sabarmati,
-Ahmedabad-380019.</div>
-      <div style="font-size:9px;color:#333;">M. : 09727807476, 9227807476 &nbsp; www.rkmove.com - email : rkmove84@gmail.com</div>
+      <div style="font-size:9px;color:#333;">Office No. 12, Lavkush Complex, Opp. Green Villa, D-Cabin, Sabarmati, Ahmedabad-380019.</div>
+      <div style="font-size:9px;color:#333;">M. : 09727807476, 08000141241 &nbsp; www.rkmove.com - email : rkmove84@gmail.com</div>
     </div>
   </div>
 
@@ -386,134 +385,185 @@ function generateBill(data: DocData): string {
   const m = data.items?.meta || {};
   const items = Array.isArray(data.items?.line_items) ? data.items.line_items : (Array.isArray(data.items) ? data.items : []);
 
-  const particularRows: string[] = [];
+  // Map the amounts from our 5 fixed fields:
+  // 1. Freight
+  // 2. Loading charges
+  // 3. Unloding charges
+  // 4. Packing charges
+  // 5. Ins.
+  const freightAmt = items.find((it: any) => it.label === 'Freight')?.amount || '';
+  const loadingAmt = items.find((it: any) => it.label === 'Loading charges')?.amount || '';
+  const unloadingAmt = items.find((it: any) => it.label === 'Unloding charges')?.amount || '';
+  const packingAmt = items.find((it: any) => it.label === 'Packing charges')?.amount || '';
+  const insAmt = items.find((it: any) => it.label === 'Ins.')?.amount || '';
 
-  // First row: "Transported your goods by our Truck"
-  particularRows.push(`
-    <td style="border:1px solid #1a237e;padding:6px;font-weight:bold;">Transported your goods by our Truck</td>
-    <td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td>
-    <td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td>
-    <td style="border:1px solid #1a237e;padding:6px;" colspan="2">&nbsp;</td>
-  `);
+  const gstPercent = parseFloat(data.gst_percent) || 0;
+  const subtotal = data.subtotal || 0;
+  const gstAmount = data.gst_amount || 0;
+  const totalAmount = data.total_amount || 0;
 
-  // User items
-  items.forEach((it: any) => {
-    particularRows.push(`
-      <td style="border:1px solid #1a237e;padding:6px;">${it.particulars || it.description || ''}</td>
-      <td style="border:1px solid #1a237e;padding:6px;text-align:center;">${it.rate || ''}</td>
-      <td style="border:1px solid #1a237e;padding:6px;text-align:center;">${it.weight || ''}</td>
-      <td style="border:1px solid #1a237e;padding:6px;text-align:right;" colspan="2">${it.amount ? '₹' + Number(it.amount).toLocaleString() : ''}</td>
-    `);
-  });
-
-  // Empty spacer
-  particularRows.push(`<td style="border:1px solid #1a237e;padding:6px;height:20px;">&nbsp;</td><td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td><td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td><td style="border:1px solid #1a237e;padding:6px;" colspan="2">&nbsp;</td>`);
-
-  // Fixed dotted lines
-  const fixedLines = [
-    `No ${dots(50)} <span style="font-weight:500;">${m.vehicle_number || ''}</span>`,
-    `Ex ${dots(50)} <span style="font-weight:500;">${m.from_location || ''}</span>`,
-    `To ${dots(50)} <span style="font-weight:500;">${m.to_location || ''}</span>`,
-    `Vide our G. R. No. ${dots(30)} <span style="font-weight:500;">${data.lr_number || ''}</span>`,
-    `Date ${dots(47)} <span style="font-weight:500;">${fmtDate(data.created_at)}</span>`,
-  ];
-
-  fixedLines.forEach((line, i) => {
-    const isLast = i === fixedLines.length - 1;
-    particularRows.push(`
-      <td style="border:1px solid #1a237e;padding:6px;font-weight:bold;font-size:11px;">${line}</td>
-      <td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:6px;text-align:right;${isLast ? 'font-weight:bold;font-size:14px;' : ''}" colspan="2">${isLast ? '₹' + Number(data.total_amount).toLocaleString() : ''}</td>
-    `);
-  });
-
-  // Pad empty rows
-  while (particularRows.length < 10) {
-    particularRows.push(`<td style="border:1px solid #1a237e;padding:6px;height:22px;">&nbsp;</td><td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td><td style="border:1px solid #1a237e;padding:6px;">&nbsp;</td><td style="border:1px solid #1a237e;padding:6px;" colspan="2">&nbsp;</td>`);
-  }
+  const origin = window.location.origin;
 
   return `<!DOCTYPE html><html><head><title>Bill - ${data.invoice_number}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Arial',sans-serif;color:#1a237e;padding:20px 30px;max-width:780px;margin:auto;font-size:11px;}
+body{font-family:'Arial',sans-serif;color:#1a237e;padding:20px 30px;max-width:800px;margin:auto;font-size:11px;}
 @page{margin:10mm;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 table{border-collapse:collapse;width:100%;}
 </style></head><body>
 
-<!-- BILL label -->
-<div style="text-align:center;margin-bottom:4px;">
-  <span style="border:2px solid #1a237e;padding:2px 12px;font-size:12px;font-weight:bold;background:#f0f0f8;">BILL</span>
+<!-- INVOICE label & MOB -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-weight:bold;font-size:11px;">
+  <span style="visibility:hidden;">INVOICE</span>
+  <span style="border:2px solid #1a237e;padding:2px 16px;font-size:12px;font-weight:bold;background:#f0f0f8;">INVOICE</span>
+  <span style="text-align:right;font-size:10px;">MOB.: 9727807476<br/>08000141241</span>
 </div>
 
 <!-- Header with logo -->
-<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
-  <img src="${LOGO_URL}" style="width:80px;height:auto;" />
-  <div>
-    <div style="font-size:26px;font-weight:900;color:#1a237e;">R. K. CARGO PACKERS & MOVERS</div>
-    <div style="font-size:10px;color:#333;">Office No. 12, Lavkush Complex Opp. Green Villa D-cabin, Sabarmati,</div>
-    <div style="font-size:10px;color:#333;">Ahmedabad-380019. <strong>M. : 09727807476, 08000141241</strong></div>
-    <div style="font-size:10px;color:#333;">www.rkmove.com - email : rkmove84@gmail.com.</div>
+<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #1a237e;padding-bottom:12px;margin-bottom:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <img src="${LOGO_URL}" style="width:75px;height:auto;" />
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:28px;font-weight:900;color:#1a237e;letter-spacing:0.5px;">R. K. <span style="color:#ea580c;">CARGO</span></div>
+    <div style="font-size:11px;font-weight:bold;color:#1a237e;letter-spacing:2px;margin-top:2px;border-top:1px solid #cbd5e1;padding-top:4px;">PACKERS AND MOVERS</div>
+    <div style="font-size:9px;color:#64748b;margin-top:2px;">📍 Office No G-12, Lavkush Complex, Opp Green Villa, D-Cabin, Sabarmati, Ahmedabad - 380019</div>
   </div>
 </div>
 
 <!-- To / Bill No / Date -->
-<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;">
-  <div style="flex:1;">
-    <div>To <span style="border-bottom:1px dotted #555;display:inline-block;min-width:380px;padding:0 4px;">${data.customer_name}</span></div>
-    <div style="margin-top:4px;"><span style="border-bottom:1px dotted #555;display:inline-block;min-width:410px;padding:0 4px;margin-left:18px;">${data.customer_address || ''}</span></div>
-  </div>
-  <div style="text-align:right;">
-    <div><strong>BILL No. :</strong> <span style="font-size:20px;font-weight:bold;">${data.invoice_number}</span></div>
-    <div style="margin-top:4px;">Date <span style="border-bottom:1px dotted #555;display:inline-block;min-width:80px;padding:0 4px;">${fmtDate(data.created_at)}</span></div>
-  </div>
-</div>
-
-<!-- Payment note -->
-<div style="border:1px solid #1a237e;padding:4px 8px;font-size:9px;font-style:italic;margin:6px 0;">
-  <em>Note : Please make payment within 7 Days by Cross Cheque / Cash. Otherwise interest will be charged 18% p.a.</em>
-</div>
+<table style="width:100%;margin-bottom:12px;font-size:12px;">
+  <tr>
+    <td style="width:70%;vertical-align:bottom;">
+      To, <span style="border-bottom:1px dotted #555;display:inline-block;width:80%;padding:0 4px;font-weight:bold;">${data.customer_name}</span>
+    </td>
+    <td style="width:30%;vertical-align:bottom;text-align:right;">
+      Bill No.: <span style="border-bottom:1px dotted #555;display:inline-block;width:60%;padding:0 4px;font-weight:bold;font-size:14px;">${data.invoice_number}</span>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:bottom;padding-top:6px;">
+      <span style="border-bottom:1px dotted #555;display:inline-block;width:86%;padding:0 4px;margin-left:22px;">${data.customer_address || ''}</span>
+    </td>
+    <td style="vertical-align:bottom;text-align:right;padding-top:6px;">
+      Date: <span style="border-bottom:1px dotted #555;display:inline-block;width:73%;padding:0 4px;font-weight:bold;">${fmtDate(data.created_at)}</span>
+    </td>
+  </tr>
+</table>
 
 <!-- Bill table -->
-<table style="border:1px solid #1a237e;">
+<table style="border:2px solid #1a237e;width:100%;">
   <thead>
-    <tr>
-      <th style="border:1px solid #1a237e;padding:5px;font-size:11px;font-weight:bold;width:7%;text-align:center;">PKGS.</th>
-      <th style="border:1px solid #1a237e;padding:5px;font-size:11px;font-weight:bold;width:6%;text-align:center;">ITEM</th>
-      <th style="border:1px solid #1a237e;padding:5px;font-size:11px;font-weight:bold;width:38%;text-align:center;">P A R T I C U L A R S</th>
-      <th style="border:1px solid #1a237e;padding:5px;font-size:11px;font-weight:bold;width:9%;text-align:center;">RATE</th>
-      <th style="border:1px solid #1a237e;padding:5px;font-size:11px;font-weight:bold;width:10%;text-align:center;">WEIGHT</th>
-      <th colspan="2" style="border:1px solid #1a237e;padding:5px;font-size:11px;font-weight:bold;width:18%;text-align:center;">AMOUNT<br/><span style="font-size:8px;font-weight:normal;">Rs. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ps.</span></th>
+    <tr style="background:#f0f0f8;">
+      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:8%;text-align:center;">Sr.No.</th>
+      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:45%;text-align:center;">Particulars</th>
+      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:10%;text-align:center;">HSN Code</th>
+      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:9%;text-align:center;">Weight</th>
+      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:10%;text-align:center;">Rate</th>
+      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:18%;text-align:center;">Amount</th>
     </tr>
   </thead>
   <tbody>
-    ${particularRows.map((row, i) => `<tr>
-      ${i === 0 ? `<td style="border:1px solid #1a237e;padding:6px;vertical-align:top;text-align:center;" rowspan="${particularRows.length}">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:6px;vertical-align:top;text-align:center;" rowspan="${particularRows.length}">&nbsp;</td>` : ''}
-      ${row}
-    </tr>`).join('')}
+    <tr>
+      <!-- Column 1: Sr.No. -->
+      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-weight:bold;">1</td>
+      
+      <!-- Column 2: Particulars -->
+      <td style="border-right:1px solid #1a237e;padding:12px 10px;vertical-align:top;line-height:1.8;font-size:11px;">
+        <div style="font-weight:bold;margin-bottom:8px;text-decoration:underline;">Being the Transportation of your Household goods</div>
+        <div style="margin-bottom:6px;">From: <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.from_location || ''}</span></div>
+        <div style="margin-bottom:6px;">To: <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.to_location || ''}</span></div>
+        <div style="margin-bottom:6px;">Vehicle No.: <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.vehicle_number || ''}</span></div>
+        <div style="display:flex;gap:12px;margin-top:10px;font-weight:bold;">
+          <span>[${m.vehicle_type === '2 Wheeler' ? '✔' : ' '}] 2 Wheeler</span>
+          <span>[${m.vehicle_type === '4 Wheeler' ? '✔' : ' '}] 4 Wheeler</span>
+        </div>
+        <div style="margin-top:40px;font-size:10px;color:#333;">
+          <div style="font-weight:bold;">PAN No.: <span style="color:#ef4444;">AAOFK7219H</span></div>
+          <div style="font-weight:bold;margin-top:2px;">GSTIN : <span style="color:#ef4444;">24ARXPP9693E1ZV</span></div>
+        </div>
+      </td>
+      
+      <!-- Column 3: HSN Code -->
+      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-weight:bold;font-size:11px;">
+        ${m.HSN_code || '9965'}
+      </td>
+      
+      <!-- Column 4: Weight -->
+      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-size:11px;">
+        ${m.weight || ''}
+      </td>
+      
+      <!-- Column 5: Rate -->
+      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-size:11px;">
+        ${m.rate || ''}
+      </td>
+      
+      <!-- Column 6: Right Side Charges Breakdown Table -->
+      <td style="padding:0;vertical-align:top;font-size:11px;">
+        <table style="width:100%;height:100%;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;width:60%;">Freight</td>
+            <td style="padding:6px;text-align:right;">${freightAmt ? '₹' + Number(freightAmt).toLocaleString() : ''}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;">Packing charges</td>
+            <td style="padding:6px;text-align:right;">${packingAmt ? '₹' + Number(packingAmt).toLocaleString() : ''}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;">Loading charges</td>
+            <td style="padding:6px;text-align:right;">${loadingAmt ? '₹' + Number(loadingAmt).toLocaleString() : ''}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;">Unloading charges</td>
+            <td style="padding:6px;text-align:right;">${unloadingAmt ? '₹' + Number(unloadingAmt).toLocaleString() : ''}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;">Ins.</td>
+            <td style="padding:6px;text-align:right;">${insAmt ? '₹' + Number(insAmt).toLocaleString() : ''}</td>
+          </tr>
+          ${gstPercent > 0 ? `
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;">Subtotal</td>
+            <td style="padding:6px;text-align:right;font-weight:bold;">₹${Number(subtotal).toLocaleString()}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1a237e;">
+            <td style="padding:6px;border-right:1px solid #1a237e;">GST (${gstPercent}%)</td>
+            <td style="padding:6px;text-align:right;font-weight:bold;">₹${Number(gstAmount).toLocaleString()}</td>
+          </tr>
+          ` : ''}
+          <tr style="background:#f0f0f8;font-weight:bold;font-size:12px;">
+            <td style="padding:8px 6px;border-right:1px solid #1a237e;">Total</td>
+            <td style="padding:8px 6px;text-align:right;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </tbody>
 </table>
 
-<!-- GSTIN & Service Tax -->
-<div style="margin-top:10px;">
-  <div style="font-weight:bold;font-size:12px;">GSTIN : 24ARXPP9693E1ZV</div>
-  <div style="font-weight:bold;font-size:11px;margin-top:4px;">SERVICE TAX PAID BY</div>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:6px;font-size:11px;">
-    <div style="display:flex;gap:8px;align-items:center;">
-      <span>Consignor <span style="display:inline-block;width:20px;height:16px;border:1px solid #1a237e;vertical-align:middle;"></span></span>
-      <span>Consignee <span style="display:inline-block;width:20px;height:16px;border:1px solid #1a237e;vertical-align:middle;"></span></span>
-      <span>Transporter <span style="display:inline-block;width:20px;height:16px;border:1px solid #1a237e;vertical-align:middle;"></span></span>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-weight:bold;font-size:12px;">For, R. K. CARGO PACKERS & MOVERS</div>
-      <img src="${STAMP_URL}" style="width:80px;height:80px;margin-top:5px;" />
-    </div>
-  </div>
-</div>
-
-${generateQuotationBack()}
+<!-- Footer details -->
+<table style="width:100%;margin-top:12px;font-size:11px;">
+  <tr>
+    <td style="width:55%;vertical-align:top;line-height:1.6;">
+      <div style="font-weight:bold;font-size:11px;margin-bottom:6px;">GST Payable by: <span style="text-decoration:underline;">PARTY</span></div>
+      <div style="margin-bottom:10px;">Rupees <span style="border-bottom:1px solid #555;display:inline-block;width:80%;padding:0 4px;font-weight:bold;font-style:italic;">${data.notes || ''}</span></div>
+      <div style="font-size:10px;color:#444;margin-top:10px;">
+        1. Interest @ 18% p.a. will be charged extra, if payment is not received on or before due date.<br/>
+        2. Subject to Ahmedabad Jurisdiction.
+      </div>
+      <div style="margin-top:50px;font-weight:bold;">Receiver's Signature</div>
+    </td>
+    <td style="width:45%;vertical-align:top;text-align:right;">
+      <div style="font-weight:bold;font-size:11px;">For, R.K. CARGO PACKERS & MOVERS</div>
+      <div style="margin-top:10px;margin-bottom:6px;display:inline-block;position:relative;">
+        <img src="${STAMP_URL}" style="width:110px;height:110px;object-fit:contain;" />
+      </div>
+      <div style="margin-top:20px;font-weight:bold;">Accountant / Manager</div>
+    </td>
+  </tr>
+</table>
 
 </body></html>`;
 }
@@ -549,8 +599,8 @@ table{border-collapse:collapse;}
   <img src="${LOGO_URL}" style="width:75px;height:auto;" />
   <div>
     <div style="font-size:28px;font-weight:900;color:#1a237e;">R. K. CARGO PACKERS & MOVERS</div>
-    <div style="font-size:9px;color:#333;">NR. AASRWAD RESTAURANT, NAROL ASLALI HIGHWAY, LAMBHA TURNING NAROL, AHMEDABAD.</div>
-    <div style="font-size:9px;color:#333;">M. : 09727807476, 9227807476 &nbsp; www.rkmove.com - email : rkmove84@gmail.com</div>
+    <div style="font-size:9px;color:#333;">Office No. 12, Lavkush Complex, Opp. Green Villa, D-Cabin, Sabarmati, Ahmedabad-380019.</div>
+    <div style="font-size:9px;color:#333;">M. : 09727807476, 08000141241 &nbsp; www.rkmove.com - email : rkmove84@gmail.com</div>
   </div>
 </div>
 

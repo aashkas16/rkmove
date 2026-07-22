@@ -70,7 +70,15 @@ const AdminInvoices = () => {
         setForm({ ...base, amount_words: "", payment_ref: "", payment_date: "", against_bill: "", against_date: "", amount: 0 });
         break;
       case "Bill":
-        setForm({ ...base, from_location: "", to_location: "", vehicle_number: "", items: [{ particulars: "", rate: 0, weight: "", amount: 0 }] });
+        setForm({ ...base, from_location: "", to_location: "", vehicle_number: "", vehicle_type: "4 Wheeler", HSN_code: "9965", weight: "", rate: "", 
+          particulars: [
+            { label: 'Freight', amount: '' },
+            { label: 'Loading charges', amount: '' },
+            { label: 'Unloding charges', amount: '' },
+            { label: 'Packing charges', amount: '' },
+            { label: 'Ins.', amount: '' },
+          ]
+        });
         break;
       case "Packing List":
         setForm({ ...base, from_location: "", to_location: "", articles: [{ no: 1, description: "" }] });
@@ -100,7 +108,7 @@ const AdminInvoices = () => {
     if (docType === "Money Receipt") return { subtotal: form.amount || 0, gstAmt: 0, total: form.amount || 0 };
     const gstRate = parseFloat(form.gst_percent);
     const hasGst = !isNaN(gstRate) && gstRate > 0;
-    if (docType === "Quotation") {
+    if (docType === "Quotation" || docType === "Bill") {
       const sub = (form.particulars || []).reduce((s: number, p: any) => s + (parseFloat(p.amount) || 0), 0);
       const gst = hasGst ? sub * gstRate / 100 : 0;
       return { subtotal: sub, gstAmt: gst, total: sub + gst };
@@ -140,6 +148,15 @@ const AdminInvoices = () => {
       meta.payment_date = form.payment_date;
       meta.against_bill = form.against_bill;
       meta.against_date = form.against_date;
+    } else if (docType === "Bill") {
+      meta.from_location = form.from_location;
+      meta.to_location = form.to_location;
+      meta.vehicle_number = form.vehicle_number;
+      meta.vehicle_type = form.vehicle_type || '4 Wheeler';
+      meta.HSN_code = form.HSN_code || '9965';
+      meta.weight = form.weight || '';
+      meta.rate = form.rate || '';
+      lineItems = form.particulars || [];
     } else {
       meta.from_location = form.from_location;
       meta.to_location = form.to_location;
@@ -493,38 +510,78 @@ function MoneyReceiptFields({ form, setForm }: { form: any; setForm: (f: any) =>
 
 // ==================== Bill Fields ====================
 function BillFields({ form, setForm }: { form: any; setForm: (f: any) => void }) {
-  const updateItem = (idx: number, field: string, val: any) => {
-    const items = [...form.items];
-    items[idx] = { ...items[idx], [field]: val };
-    if (field === "rate" || field === "weight") {
-      items[idx].amount = (parseFloat(items[idx].rate) || 0) * (parseFloat(items[idx].weight) || 1);
-    }
-    setForm({ ...form, items });
+  const updateParticular = (idx: number, field: string, val: string) => {
+    const particulars = [...(form.particulars || [])];
+    particulars[idx] = { ...particulars[idx], [field]: val };
+    setForm({ ...form, particulars });
   };
 
   return (
-    <div className="space-y-3 mt-4">
-      <div className="grid grid-cols-3 gap-3">
-        <div><label className="text-xs text-muted-foreground">Vehicle No.</label><Input value={form.vehicle_number} onChange={e => setForm({ ...form, vehicle_number: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">From (Ex)</label><Input value={form.from_location} onChange={e => setForm({ ...form, from_location: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">To</label><Input value={form.to_location} onChange={e => setForm({ ...form, to_location: e.target.value })} /></div>
+    <div className="space-y-4 mt-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground font-semibold">From Location</label>
+          <Input value={form.from_location || ''} onChange={e => setForm({ ...form, from_location: e.target.value })} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground font-semibold">To Location</label>
+          <Input value={form.to_location || ''} onChange={e => setForm({ ...form, to_location: e.target.value })} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground font-semibold">Vehicle Number</label>
+          <Input value={form.vehicle_number || ''} onChange={e => setForm({ ...form, vehicle_number: e.target.value })} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground font-semibold">Vehicle Type</label>
+          <Select value={form.vehicle_type || '4 Wheeler'} onValueChange={val => setForm({ ...form, vehicle_type: val })}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2 Wheeler">2 Wheeler</SelectItem>
+              <SelectItem value="4 Wheeler">4 Wheeler</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground font-semibold">HSN Code</label>
+          <Input value={form.HSN_code || '9965'} onChange={e => setForm({ ...form, HSN_code: e.target.value })} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground font-semibold">Weight</label>
+          <Input value={form.weight || ''} onChange={e => setForm({ ...form, weight: e.target.value })} />
+        </div>
+        <div className="col-span-1 md:col-span-3">
+          <label className="text-xs text-muted-foreground font-semibold">Rate</label>
+          <Input value={form.rate || ''} onChange={e => setForm({ ...form, rate: e.target.value })} />
+        </div>
       </div>
 
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <label className="text-sm font-medium">Particulars</label>
-          <Button variant="outline" size="sm" onClick={() => setForm({ ...form, items: [...form.items, { particulars: "", rate: 0, weight: "", amount: 0 }] })}><Plus className="w-3 h-3 mr-1" /> Add</Button>
-        </div>
-        {form.items.map((item: any, idx: number) => (
-          <div key={idx} className="grid grid-cols-12 gap-2 mb-2 items-end">
-            <div className="col-span-5"><Input placeholder="Particulars" value={item.particulars} onChange={e => updateItem(idx, "particulars", e.target.value)} /></div>
-            <div className="col-span-2"><Input type="number" placeholder="Rate" value={item.rate} onChange={e => updateItem(idx, "rate", e.target.value)} /></div>
-            <div className="col-span-2"><Input placeholder="Weight" value={item.weight} onChange={e => updateItem(idx, "weight", e.target.value)} /></div>
-            <div className="col-span-2 text-sm font-medium pt-2">₹{(parseFloat(item.amount) || 0).toLocaleString()}</div>
-            <div className="col-span-1">{form.items.length > 1 && <Button variant="ghost" size="icon" onClick={() => setForm({ ...form, items: form.items.filter((_: any, i: number) => i !== idx) })}><Trash2 className="w-3 h-3" /></Button>}</div>
+      {form.particulars && (
+        <div className="space-y-2">
+          <label className="text-sm font-semibold block text-gray-800">Charges Breakdown</label>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="grid grid-cols-12 gap-0 bg-muted px-3 py-2">
+              <div className="col-span-8 text-xs font-semibold text-muted-foreground">Charge Type</div>
+              <div className="col-span-4 text-xs font-semibold text-muted-foreground">Amount (₹)</div>
+            </div>
+            {form.particulars.map((p: any, idx: number) => (
+              <div key={idx} className="grid grid-cols-12 gap-0 px-3 py-1.5 items-center border-t border-border">
+                <div className="col-span-8 text-xs font-semibold text-gray-700">{p.label}</div>
+                <div className="col-span-4">
+                  <Input 
+                    type="number" 
+                    className="h-8 text-xs" 
+                    placeholder="0" 
+                    value={p.amount || ''} 
+                    onChange={e => updateParticular(idx, 'amount', e.target.value)} 
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

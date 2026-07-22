@@ -456,12 +456,12 @@ function LRCopyFields({ form, setForm }: { form: any; setForm: (f: any) => void 
         </div>
         {form.items.map((item: any, idx: number) => (
           <div key={idx} className="grid grid-cols-12 gap-2 mb-2 items-end">
-            <div className="col-span-3"><Input placeholder="Description" value={item.description} onChange={e => updateItem(idx, "description", e.target.value)} /></div>
-            <div className="col-span-1"><Input placeholder="Pkgs" value={item.packages} onChange={e => updateItem(idx, "packages", e.target.value)} /></div>
-            <div className="col-span-2"><Input placeholder="Wt Actual" value={item.weight_actual} onChange={e => updateItem(idx, "weight_actual", e.target.value)} /></div>
-            <div className="col-span-2"><Input placeholder="Wt Charged" value={item.weight_charged} onChange={e => updateItem(idx, "weight_charged", e.target.value)} /></div>
-            <div className="col-span-2"><Input type="text" placeholder="Rate" value={item.rate} onChange={e => updateItem(idx, "rate", e.target.value)} /></div>
-            <div className="col-span-1"><Input type="text" placeholder="Freight" value={item.freight} onChange={e => updateItem(idx, "freight", e.target.value)} /></div>
+            <div className="col-span-3"><Input placeholder="Description" value={item.description || ''} onChange={e => updateItem(idx, "description", e.target.value)} /></div>
+            <div className="col-span-1"><Input placeholder="Pkgs" value={item.packages || ''} onChange={e => updateItem(idx, "packages", e.target.value)} /></div>
+            <div className="col-span-2"><Input placeholder="Wt Actual" value={item.weight_actual || ''} onChange={e => updateItem(idx, "weight_actual", e.target.value)} /></div>
+            <div className="col-span-2"><Input placeholder="Wt Charged" value={item.weight_charged || ''} onChange={e => updateItem(idx, "weight_charged", e.target.value)} /></div>
+            <div className="col-span-2"><Input type="text" placeholder="Rate" value={item.rate || ''} onChange={e => updateItem(idx, "rate", e.target.value)} /></div>
+            <div className="col-span-1"><Input type="text" placeholder="Freight" value={item.freight || ''} onChange={e => updateItem(idx, "freight", e.target.value)} /></div>
             <div className="col-span-1">{form.items.length > 1 && <Button variant="ghost" size="icon" onClick={() => setForm({ ...form, items: form.items.filter((_: any, i: number) => i !== idx) })}><Trash2 className="w-3 h-3" /></Button>}</div>
           </div>
         ))}
@@ -494,8 +494,8 @@ function QuotationFields({ form, setForm, isQuotation = false }: { form: any; se
   return (
     <div className="space-y-3 mt-4">
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-xs text-muted-foreground">From Location</label><Input value={form.from_location} onChange={e => setForm({ ...form, from_location: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">To Location</label><Input value={form.to_location} onChange={e => setForm({ ...form, to_location: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">From Location</label><Input value={form.from_location || ''} onChange={e => setForm({ ...form, from_location: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">To Location</label><Input value={form.to_location || ''} onChange={e => setForm({ ...form, to_location: e.target.value })} /></div>
         {isQuotation && (
           <div><label className="text-xs text-muted-foreground">Appex. Date of Moment</label><Input type="date" value={form.moment_date || ""} onChange={e => setForm({ ...form, moment_date: e.target.value })} /></div>
         )}
@@ -568,12 +568,12 @@ function MoneyReceiptFields({ form, setForm }: { form: any; setForm: (f: any) =>
   return (
     <div className="space-y-3 mt-4">
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-xs text-muted-foreground">Amount (₹)</label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} /></div>
-        <div><label className="text-xs text-muted-foreground">Amount in Words</label><Input placeholder="e.g. Five Thousand Only" value={form.amount_words} onChange={e => setForm({ ...form, amount_words: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">Cheque/Cash/DD No.</label><Input value={form.payment_ref} onChange={e => setForm({ ...form, payment_ref: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">Payment Date</label><Input type="date" value={form.payment_date} onChange={e => setForm({ ...form, payment_date: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">Against Bill/CN No.</label><Input value={form.against_bill} onChange={e => setForm({ ...form, against_bill: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">Against Date</label><Input type="date" value={form.against_date} onChange={e => setForm({ ...form, against_date: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">Amount (₹)</label><Input type="number" value={form.amount || ""} onChange={e => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} /></div>
+        <div><label className="text-xs text-muted-foreground">Amount in Words</label><Input placeholder="e.g. Five Thousand Only" value={form.amount_words || ""} onChange={e => setForm({ ...form, amount_words: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">Cheque/Cash/DD No.</label><Input value={form.payment_ref || ""} onChange={e => setForm({ ...form, payment_ref: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">Payment Date</label><Input type="date" value={form.payment_date || ""} onChange={e => setForm({ ...form, payment_date: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">Against Bill/CN No.</label><Input value={form.against_bill || ""} onChange={e => setForm({ ...form, against_bill: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">Against Date</label><Input type="date" value={form.against_date || ""} onChange={e => setForm({ ...form, against_date: e.target.value })} /></div>
       </div>
     </div>
   );

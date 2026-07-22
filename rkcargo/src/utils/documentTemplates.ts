@@ -30,156 +30,196 @@ const dots = (n: number) => '.'.repeat(n);
 function generateLRCopy(data: DocData): string {
   const m = data.items?.meta || {};
   const items = Array.isArray(data.items?.line_items) ? data.items.line_items : [];
-  const emptyRows = Math.max(6 - items.length, 2);
+
+  const freightSum = items.reduce((s: number, i: any) => s + (parseFloat(i.freight) || 0), 0);
+  const totalAmount = data.total_amount || 0;
+
+  const cargoRows = [...items];
+  while (cargoRows.length < 8) {
+    cargoRows.push({ packages: '', description: '', weight_actual: '', weight_charged: '', rate: '', freight: '' });
+  }
+
+  const formatAmtVal = (val: any) => {
+    if (val === undefined || val === null || val === '') return '&nbsp;';
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      return '₹' + num.toLocaleString();
+    }
+    return String(val);
+  };
+
+  const chargesList = [
+    { label: 'Freight', amount: freightSum },
+    { label: 'Mazdoor Charges', amount: m.mazdoor_charges },
+    { label: 'Risk Charges', amount: m.risk_charges },
+    { label: 'SGST', amount: m.sgst },
+    { label: 'CGST', amount: m.cgst },
+    { label: 'IGST', amount: m.igst },
+    { label: 'Any Other Charges', amount: m.other_charges },
+  ];
 
   return `<!DOCTYPE html><html><head><title>LR Copy - ${data.lr_number || data.invoice_number}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Arial',sans-serif;color:#1a237e;padding:15px 25px;max-width:850px;margin:auto;font-size:11px;}
+body{font-family:'Arial',sans-serif;color:#1a237e;padding:15px 25px;max-width:850px;margin:auto;font-size:10px;}
 @page{margin:8mm;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 table{border-collapse:collapse;width:100%;}
+.border-cell {
+  border: 1px solid #1a237e;
+  padding: 5px;
+}
 </style></head><body>
 
-<!-- Top jurisdiction bar -->
-<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:6px;">
-  <span style="font-weight:bold;text-decoration:underline;">ALL SUBJECT TO AHMEDABAD JURISDICTION ONLY</span>
-  <span style="font-weight:bold;">GSTIN : 24ARXPP9693E1ZV</span>
+<!-- Top jurisdiction & GSTIN -->
+<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px;font-weight:bold;">
+  <span style="text-decoration:underline;">ALL SUBJECT TO AHMEDABAD JURISDICTION ONLY</span>
+  <span>GSTIN : 24ARXPP9693E1ZV</span>
 </div>
 
 <!-- Header with logo -->
-<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
-  <img src="${LOGO_URL}" style="width:85px;height:auto;" />
-  <div>
-    <div style="font-size:26px;font-weight:900;color:#1a237e;letter-spacing:1px;">R. K. CARGO PACKERS & MOVERS</div>
-    <div style="font-size:10px;color:#333;">OFFICE NO. 12, LAVKUSH COMPLEX OPP. GREEN VILLA, D-CABIN, SABARMATI, AHMEDABAD-380019</div>
-    <div style="font-size:10px;color:#333;">M. : 09727807476, 08000141241 &nbsp; www.rkmove.com - email : rkmove84@gmail.com.</div>
-  </div>
-</div>
-
-<!-- Three column section -->
-<div style="display:flex;gap:10px;margin-bottom:6px;">
-  <div style="flex:1.2;">
-    <div style="text-align:center;font-weight:bold;font-size:12px;margin-bottom:2px;">CAUTION</div>
-    <div style="font-size:9px;line-height:1.3;">This consignment will not be detained, diverted, re-routed or re-booked without Consignee Bank's written permission will be delivered at the destination.</div>
-  </div>
-  <div style="flex:1.3;text-align:center;">
-    <div style="font-size:16px;font-weight:bold;">CONSIGNEE COPY</div>
-    <div style="font-size:12px;font-weight:bold;">AT OWNER'S RISK</div>
-    <div style="font-size:12px;font-weight:bold;">INSURANCE</div>
-  </div>
-  <div style="flex:0.8;text-align:right;">
-    <div style="font-size:12px;">Date. <span style="border-bottom:1px solid #333;padding:0 20px;">${fmtDate(data.created_at)}</span></div>
-    <div style="font-size:13px;margin-top:6px;">L. R. No. <span style="font-size:24px;font-weight:bold;">${data.lr_number || data.invoice_number}</span></div>
-  </div>
-</div>
-
-<!-- NOTICE + Insurance + From boxes -->
-<div style="display:flex;gap:8px;margin-bottom:8px;">
-  <div style="flex:1.2;border:1px solid #1a237e;padding:5px;font-size:8px;line-height:1.3;">
-    <div style="text-align:center;font-weight:bold;font-size:10px;margin-bottom:2px;">NOTICE</div>
-    The Consignment covered by this set of Special Lorry Receipt form shall be stored at the destination under the control of the Transport Operator and shall be delivered to or to the order of the Consignee Bank whose name is mentioned in the Lorry Receipt. It will under no circumstances be delivered to anyone without the written authority from the Consignee Bank or its order endorsed on the Consignee Copy or on a separate Letter of Authority.
-  </div>
-  <div style="flex:1.3;">
-    <div style="border:1px solid #1a237e;padding:5px;font-size:9px;line-height:1.6;">
-      <div><strong>The Consignor has stated that</strong></div>
-      <div>☐ He has not insured the Consignment</div>
-      <div>OR</div>
-      <div>☐ He has Insured the consignment</div>
-      <div>Company ${dots(30)}</div>
-      <div>Policy No. ${dots(15)} Date ${dots(10)}</div>
-      <div>Amount ${dots(18)} Risk ${dots(10)}</div>
+<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1a237e;padding-bottom:8px;margin-bottom:8px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="${LOGO_URL}" style="width:70px;height:auto;" />
+    <div>
+      <div style="font-size:24px;font-weight:900;color:#1a237e;letter-spacing:0.5px;">R. K. <span style="color:#ea580c;">CARGO</span></div>
+      <div style="font-size:10px;font-weight:bold;color:#1a237e;letter-spacing:1px;margin-top:1px;">PACKERS AND MOVERS</div>
     </div>
-    <div style="margin-top:6px;">
-      <div style="font-weight:bold;font-size:11px;margin-bottom:3px;">From</div>
-      <div style="border:1px solid #1a237e;padding:3px 6px;font-size:10px;min-height:20px;margin-bottom:2px;">${m.from_location || ''}</div>
-      <div style="border:1px solid #1a237e;padding:3px 6px;font-size:10px;min-height:20px;">${m.to_location || ''}</div>
+  </div>
+  <div style="text-align:right;font-size:9px;color:#333;">
+    <div>📍 Office No G-12, Lavkush Complex, Opp Green Villa, D-Cabin, Sabarmati, Ahmedabad - 380019</div>
+    <div style="margin-top:2px;font-weight:bold;">M. : 09727807476, 08000141241 &nbsp; www.rkmove.com</div>
+  </div>
+</div>
+
+<!-- Copy Type, Risk, Demurrage & Doc Details -->
+<div style="display:flex;gap:8px;margin-bottom:8px;align-items:stretch;">
+  <!-- Column 1: Caution block -->
+  <div style="flex:1.2;border:1px solid #1a237e;padding:6px;font-size:8px;line-height:1.4;">
+    <div style="text-align:center;font-weight:bold;font-size:9px;margin-bottom:4px;text-decoration:underline;">Caution</div>
+    This consignment will not be detained, diverted, re-routed or re-booked without Consignee Bank's written permission. Will be delivered at the destination.
+    <div style="border-top:1px solid #cbd5e1;margin-top:6px;padding-top:4px;font-size:7.5px;">
+      Demurrage chargeable after <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.demurrage_days || '___'}</span> days @ Rs. <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.demurrage_rate || '___'}</span> per day per Qtl. on weight charged.
+    </div>
+  </div>
+  
+  <!-- Column 2: Consignee Copy & Insurance details -->
+  <div style="flex:1.4;border:1px solid #1a237e;padding:6px;font-size:8.5px;line-height:1.4;">
+    <div style="text-align:center;font-weight:bold;font-size:11px;color:#ef4444;">CONSIGNEE COPY</div>
+    <div style="text-align:center;font-weight:bold;font-size:9px;margin-bottom:4px;">${m.insurance_risk || "AT CARRIER'S RISK"}</div>
+    <div style="border-top:1px solid #cbd5e1;padding-top:4px;">
+      <strong>INSURANCE:</strong> He has stated that: He has insured the consignment.<br/>
+      Company: <span style="font-weight:bold;">${m.insurance_company || '_______________'}</span><br/>
+      Policy No.: <span style="font-weight:bold;">${m.insurance_policy || '__________'}</span> Date: <span style="font-weight:bold;">${m.insurance_date || '______'}</span><br/>
+      Amount: <span style="font-weight:bold;">${m.insurance_amount || '________'}</span> Risk: <span style="font-weight:bold;">${m.insurance_risk || '____'}</span>
+    </div>
+  </div>
+
+  <!-- Column 3: Consignment Note details -->
+  <div style="flex:1;border:1px solid #1a237e;padding:6px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+    <div>
+      <div style="font-size:10px;font-weight:bold;color:#1a237e;">CONSIGNMENT NOTE</div>
+      <div style="font-size:18px;font-weight:extrabold;color:#ef4444;margin:4px 0;">No. ${data.lr_number || data.invoice_number}</div>
+      <div style="font-size:10px;font-weight:bold;">Date: ${fmtDate(data.created_at)}</div>
+      <div style="font-size:9px;margin-top:6px;font-weight:bold;border-top:1px solid #cbd5e1;padding-top:4px;">Truck No: ${m.vehicle_number || '____________'}</div>
     </div>
   </div>
 </div>
 
-<!-- Consignor / Consignee -->
-<div style="margin-bottom:4px;font-size:11px;">
-  <strong>Consignor's Name & Address</strong> <span style="border-bottom:1px solid #555;display:inline-block;min-width:420px;padding:0 4px;">${data.customer_name}${data.customer_address ? ', ' + data.customer_address : ''}</span>
-</div>
-<div style="margin-bottom:6px;font-size:11px;">
-  <strong>Consignee's Name & Address</strong> <span style="border-bottom:1px solid #555;display:inline-block;min-width:420px;padding:0 4px;">${m.consignee_name || ''}${m.consignee_address ? ', ' + m.consignee_address : ''}</span>
-</div>
+<!-- Routing & Customer Names details -->
+<table style="width:100%;margin-bottom:8px;border-collapse:collapse;font-size:10px;">
+  <tr>
+    <td class="border-cell" style="width:50%;line-height:1.5;">
+      <strong>Consignor's Name & Address:</strong><br/>
+      <span style="font-weight:bold;font-size:10.5px;">${data.customer_name}</span><br/>
+      <span>${data.customer_address || ''}</span>
+    </td>
+    <td class="border-cell" style="width:50%;line-height:1.5;">
+      <strong>Consignee Name & Address:</strong><br/>
+      <span style="font-weight:bold;font-size:10.5px;">${m.consignee_name || ''}</span><br/>
+      <span>${m.consignee_address || ''}</span>
+    </td>
+  </tr>
+  <tr>
+    <td class="border-cell">
+      From: <span style="font-weight:bold;">${m.from_location || ''}</span>
+    </td>
+    <td class="border-cell">
+      To: <span style="font-weight:bold;">${m.to_location || ''}</span>
+    </td>
+  </tr>
+</table>
 
-<div style="font-size:9px;margin-bottom:6px;">Party is responsible to pay the Sales Tax if any charged by Govt. at the Check-Post</div>
-
-<!-- Packages table -->
-<table style="border:1px solid #1a237e;">
+<!-- Cargo & Charges Table Grid -->
+<table style="border:2px solid #1a237e;width:100%;font-size:9.5px;">
   <thead>
-    <tr>
-      <th style="border:1px solid #1a237e;padding:4px;font-size:10px;font-weight:bold;width:10%;text-align:center;">PACKAGES</th>
-      <th style="border:1px solid #1a237e;padding:4px;font-size:10px;font-weight:bold;width:28%;text-align:center;">DESCRIPTION (Said to contain)</th>
-      <th colspan="2" style="border:1px solid #1a237e;padding:4px;font-size:10px;font-weight:bold;width:14%;text-align:center;">WEIGHT<br/><span style="font-size:8px;font-weight:normal;">Actual &nbsp;&nbsp; Charged</span></th>
-      <th style="border:1px solid #1a237e;padding:4px;font-size:10px;font-weight:bold;width:10%;text-align:center;">RATE</th>
-      <th style="border:1px solid #1a237e;padding:4px;font-size:10px;font-weight:bold;width:16%;text-align:center;">FREIGHT<br/><span style="font-size:8px;font-weight:normal;">Rs. Paid/ To Pay Rs.</span></th>
-      <th colspan="2" style="border:1px solid #1a237e;padding:4px;font-size:10px;font-weight:bold;width:14%;text-align:center;">To Pay<br/><span style="font-size:8px;font-weight:normal;">Rs. &nbsp;&nbsp;&nbsp; Ps.</span></th>
+    <tr style="background:#f0f0f8;font-weight:bold;">
+      <th class="border-cell" style="width:8%;text-align:center;">Packages</th>
+      <th class="border-cell" style="width:35%;text-align:center;">Description (said to contain)</th>
+      <th class="border-cell" style="width:10%;text-align:center;">Wt. Actual</th>
+      <th class="border-cell" style="width:10%;text-align:center;">Wt. Charged</th>
+      <th class="border-cell" style="width:10%;text-align:center;">Rate</th>
+      <th class="border-cell" colspan="2" style="width:27%;text-align:center;">Amount (Paid/To Pay)</th>
     </tr>
   </thead>
   <tbody>
-    ${items.map((it: any) => `<tr>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:center;">${it.packages || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;">${it.description || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:center;">${it.weight_actual || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:center;">${it.weight_charged || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:center;">${it.rate || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:right;">${it.freight || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:right;">${it.to_pay || ''}</td>
-      <td style="border:1px solid #1a237e;padding:4px;text-align:right;">${it.to_pay_ps || ''}</td>
-    </tr>`).join('')}
-    ${Array(emptyRows).fill(`<tr>
-      <td style="border:1px solid #1a237e;padding:4px;height:22px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-      <td style="border:1px solid #1a237e;padding:4px;">&nbsp;</td>
-    </tr>`).join('')}
+    ${cargoRows.map((row, idx) => {
+      const isChargeRow = idx < chargesList.length;
+      const charge = isChargeRow ? chargesList[idx] : null;
+      return `
+      <tr>
+        <td class="border-cell" style="text-align:center;">${row.packages || '&nbsp;'}</td>
+        <td class="border-cell">${row.description || '&nbsp;'}</td>
+        <td class="border-cell" style="text-align:center;">${row.weight_actual || '&nbsp;'}</td>
+        <td class="border-cell" style="text-align:center;">${row.weight_charged || '&nbsp;'}</td>
+        <td class="border-cell" style="text-align:center;">${row.rate || '&nbsp;'}</td>
+        ${isChargeRow ? `
+          <td class="border-cell" style="font-weight:bold;width:17%;">${charge?.label}</td>
+          <td class="border-cell" style="text-align:right;width:10%;">${formatAmtVal(charge?.amount)}</td>
+        ` : (idx === 7 ? `
+          <td class="border-cell" style="font-weight:bold;background:#f0f0f8;width:17%;">Total</td>
+          <td class="border-cell" style="text-align:right;font-weight:bold;background:#f0f0f8;width:10%;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
+        ` : `
+          <td class="border-cell" style="width:17%;">&nbsp;</td>
+          <td class="border-cell" style="width:10%;">&nbsp;</td>
+        `)}
+      </tr>
+      `;
+    }).join('')}
   </tbody>
 </table>
 
-<!-- Footer -->
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:8px;">
-  <div style="flex:1;">
-    <div style="border:1px solid #1a237e;padding:4px 8px;font-size:10px;display:inline-block;">
-      Signature of Consignee ${dots(20)}
-    </div>
-    <div style="font-size:10px;margin-top:4px;">Address ${dots(30)}</div>
-  </div>
-  <div style="flex:1;text-align:center;">
-    <div style="display:inline-flex;border:2px solid #1a237e;font-weight:bold;font-size:13px;">
-      <span style="padding:3px 10px;border-right:2px solid #1a237e;${m.payment_type === 'TBB' ? 'background:#ccc;' : ''}">T.B.B.</span>
-      <span style="padding:3px 10px;border-right:2px solid #1a237e;${m.payment_type === 'To Pay' ? 'background:#ccc;' : ''}">TO PAY</span>
-      <span style="padding:3px 10px;${m.payment_type === 'Paid' ? 'background:#ccc;' : ''}">PAID</span>
-    </div>
-    <div style="margin-top:6px;font-size:9px;font-weight:bold;">SERVICE TAX & GST PAID BY</div>
-    <div style="margin-top:3px;font-size:10px;display:flex;justify-content:center;gap:6px;">
-      <span>Consignor <span style="display:inline-block;width:18px;height:14px;border:1px solid #1a237e;vertical-align:middle;"></span></span>
-      <span>Consignee <span style="display:inline-block;width:18px;height:14px;border:1px solid #1a237e;vertical-align:middle;"></span></span>
-      <span>Transporter <span style="display:inline-block;width:18px;height:14px;border:1px solid #1a237e;vertical-align:middle;"></span></span>
-    </div>
-  </div>
-  <div style="flex:1;text-align:right;">
-    <div style="font-weight:bold;font-size:12px;">For, R. K. CARGO PACKERS & MOVERS</div>
-    <img src="${STAMP_URL}" style="width:80px;height:80px;margin-top:5px;" />
-    <div style="font-size:9px;">Transporter</div>
-    <div style="font-size:9px;">Consignee</div>
-  </div>
+<!-- Footer details -->
+<div style="margin-top:6px;color:#ea580c;font-weight:bold;font-size:8.5px;text-align:center;">
+  Remark: We are not liable to pay GST. GST will be paid by party direct only. Please do not pay GST amount. Pay only Freight Charges.
 </div>
 
-<div style="margin-top:8px;font-size:9px;">
-  <div>Note : (1) Before is responsible for octroi and illegal goods.</div>
-  <div style="display:flex;justify-content:space-between;">
-    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2) Company is not responsible for leakage and breakage.</span>
-    <span>Sign. of Booking Officer ${dots(30)}</span>
-  </div>
-</div>
+<table style="width:100%;margin-top:6px;font-size:9px;border-collapse:collapse;">
+  <tr>
+    <td style="width:55%;vertical-align:top;line-height:1.6;">
+      <div style="display:flex;gap:12px;margin-bottom:6px;font-weight:bold;">
+        <span>GST Payable By:</span>
+        <span>[ ] Consignor</span>
+        <span>[ ] Consignee</span>
+      </div>
+      <div>GSTIN of Person Liable to Pay: <span style="font-weight:bold;">24ARXPP9693E1ZV</span></div>
+      <div style="margin-top:10px;">
+        1. Subject to Ahmedabad Jurisdiction.<br/>
+        2. Company is not responsible for leakage and breakage.<br/>
+        3. Demurrage chargeable after free days as per rules.
+      </div>
+      <div style="margin-top:30px;font-weight:bold;">Signature of the Booking Agent / Officer</div>
+    </td>
+    <td style="width:45%;vertical-align:top;text-align:right;">
+      <div style="font-weight:bold;font-size:10px;">For, R.K. CARGO PACKERS & MOVERS</div>
+      <div style="margin-top:6px;margin-bottom:4px;display:inline-block;position:relative;">
+        <img src="${STAMP_URL}" style="width:90px;height:90px;object-fit:contain;" />
+      </div>
+      <div style="margin-top:10px;font-weight:bold;">Accountant / Manager Signature</div>
+    </td>
+  </tr>
+</table>
+
 </body></html>`;
 }
 

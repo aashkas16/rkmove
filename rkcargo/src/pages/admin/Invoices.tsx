@@ -47,7 +47,7 @@ const AdminInvoices = () => {
     const base = { customer_name: "", customer_phone: "", customer_address: "", lr_number: "", gst_percent: "", notes: "" };
     switch (type) {
       case "LR Copy":
-        setForm({ ...base, consignee_name: "", consignee_address: "", from_location: "", to_location: "", payment_type: "Paid", items: [{ description: "", packages: "", weight_actual: "", weight_charged: "", rate: 0, freight: 0 }] });
+        setForm({ ...base, consignee_name: "", consignee_address: "", from_location: "", to_location: "", payment_type: "Paid", vehicle_number: "", demurrage_days: "", demurrage_rate: "", insurance_company: "", insurance_policy: "", insurance_date: "", insurance_amount: "", insurance_risk: "AT CARRIER'S RISK", mazdoor_charges: "", risk_charges: "", sgst: "", cgst: "", igst: "", other_charges: "", items: [{ description: "", packages: "", weight_actual: "", weight_charged: "", rate: "", freight: "" }] });
         break;
       case "Quotation":
         setForm({ ...base, from_location: "", to_location: "", moment_date: "", notes_amount: "",
@@ -115,6 +115,18 @@ const AdminInvoices = () => {
       const gst = hasGst ? sub * gstRate / 100 : 0;
       return { subtotal: sub, gstAmt: gst, total: sub + gst };
     }
+    if (docType === "LR Copy") {
+      const items = form.items || [];
+      const freightSum = items.reduce((s: number, i: any) => s + (parseFloat(i.freight) || 0), 0);
+      const sub = freightSum + 
+        (parseFloat(form.mazdoor_charges) || 0) + 
+        (parseFloat(form.risk_charges) || 0) + 
+        (parseFloat(form.sgst) || 0) + 
+        (parseFloat(form.cgst) || 0) + 
+        (parseFloat(form.igst) || 0) + 
+        (parseFloat(form.other_charges) || 0);
+      return { subtotal: sub, gstAmt: 0, total: sub };
+    }
     const items = form.items || [];
     const sub = items.reduce((s: number, i: any) => s + (parseFloat(i.amount) || parseFloat(i.freight) || 0), 0);
     const gst = hasGst ? sub * gstRate / 100 : 0;
@@ -134,6 +146,20 @@ const AdminInvoices = () => {
       meta.from_location = form.from_location;
       meta.to_location = form.to_location;
       meta.payment_type = form.payment_type;
+      meta.vehicle_number = form.vehicle_number || '';
+      meta.demurrage_days = form.demurrage_days || '';
+      meta.demurrage_rate = form.demurrage_rate || '';
+      meta.insurance_company = form.insurance_company || '';
+      meta.insurance_policy = form.insurance_policy || '';
+      meta.insurance_date = form.insurance_date || '';
+      meta.insurance_amount = form.insurance_amount || '';
+      meta.insurance_risk = form.insurance_risk || "AT CARRIER'S RISK";
+      meta.mazdoor_charges = form.mazdoor_charges || '';
+      meta.risk_charges = form.risk_charges || '';
+      meta.sgst = form.sgst || '';
+      meta.cgst = form.cgst || '';
+      meta.igst = form.igst || '';
+      meta.other_charges = form.other_charges || '';
       lineItems = form.items || [];
     } else if (docType === "Quotation") {
       meta.from_location = form.from_location;
@@ -368,22 +394,28 @@ function LRCopyFields({ form, setForm }: { form: any; setForm: (f: any) => void 
     const items = [...form.items];
     items[idx] = { ...items[idx], [field]: val };
     if (field === "rate" || field === "packages") {
-      items[idx].freight = (parseFloat(items[idx].rate) || 0) * (parseFloat(items[idx].packages) || 1);
+      const rateVal = parseFloat(items[idx].rate);
+      const pkgsVal = parseFloat(items[idx].packages);
+      if (!isNaN(rateVal) && !isNaN(pkgsVal)) {
+        items[idx].freight = String(rateVal * pkgsVal);
+      }
     }
     setForm({ ...form, items });
   };
 
   return (
-    <div className="space-y-3 mt-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-xs text-muted-foreground">Consignee Name</label><Input value={form.consignee_name} onChange={e => setForm({ ...form, consignee_name: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">Consignee Address</label><Input value={form.consignee_address} onChange={e => setForm({ ...form, consignee_address: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">From</label><Input value={form.from_location} onChange={e => setForm({ ...form, from_location: e.target.value })} /></div>
-        <div><label className="text-xs text-muted-foreground">To</label><Input value={form.to_location} onChange={e => setForm({ ...form, to_location: e.target.value })} /></div>
+    <div className="space-y-4 mt-4">
+      {/* Basic Consignee and Routing Details */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div><label className="text-xs text-muted-foreground font-semibold">Consignee Name</label><Input value={form.consignee_name || ''} onChange={e => setForm({ ...form, consignee_name: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground font-semibold">Consignee Address</label><Input value={form.consignee_address || ''} onChange={e => setForm({ ...form, consignee_address: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground font-semibold font-semibold font-semibold">Truck No.</label><Input value={form.vehicle_number || ''} onChange={e => setForm({ ...form, vehicle_number: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground font-semibold">From Location</label><Input value={form.from_location || ''} onChange={e => setForm({ ...form, from_location: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground font-semibold">To Location</label><Input value={form.to_location || ''} onChange={e => setForm({ ...form, to_location: e.target.value })} /></div>
         <div>
-          <label className="text-xs text-muted-foreground">Payment Type</label>
-          <Select value={form.payment_type} onValueChange={v => setForm({ ...form, payment_type: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <label className="text-xs text-muted-foreground font-semibold">Payment Type</label>
+          <Select value={form.payment_type || 'Paid'} onValueChange={v => setForm({ ...form, payment_type: v })}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="Paid">Paid</SelectItem>
               <SelectItem value="To Pay">To Pay</SelectItem>
@@ -393,10 +425,34 @@ function LRCopyFields({ form, setForm }: { form: any; setForm: (f: any) => void 
         </div>
       </div>
 
+      {/* Demurrage & Insurance Info */}
+      <div className="border border-border rounded-lg p-3 space-y-3 bg-gray-50">
+        <h4 className="text-xs font-bold text-gray-700">Demurrage & Insurance</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div><label className="text-[10px] text-muted-foreground">Demurrage After (Days)</label><Input className="h-8 text-xs" value={form.demurrage_days || ''} onChange={e => setForm({ ...form, demurrage_days: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">Demurrage Rate (Rs/Day)</label><Input className="h-8 text-xs" value={form.demurrage_rate || ''} onChange={e => setForm({ ...form, demurrage_rate: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">Insurance Company</label><Input className="h-8 text-xs" value={form.insurance_company || ''} onChange={e => setForm({ ...form, insurance_company: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">Policy No.</label><Input className="h-8 text-xs" value={form.insurance_policy || ''} onChange={e => setForm({ ...form, insurance_policy: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">Insurance Date</label><Input type="date" className="h-8 text-xs" value={form.insurance_date || ''} onChange={e => setForm({ ...form, insurance_date: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">Insurance Amount</label><Input className="h-8 text-xs" value={form.insurance_amount || ''} onChange={e => setForm({ ...form, insurance_amount: e.target.value })} /></div>
+          <div className="col-span-2">
+            <label className="text-[10px] text-muted-foreground">Insurance Risk</label>
+            <Select value={form.insurance_risk || "AT CARRIER'S RISK"} onValueChange={v => setForm({ ...form, insurance_risk: v })}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="AT CARRIER'S RISK">AT CARRIER'S RISK</SelectItem>
+                <SelectItem value="AT OWNER'S RISK">AT OWNER'S RISK</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Cargo Packages Table */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <label className="text-sm font-medium">Packages</label>
-          <Button variant="outline" size="sm" onClick={() => setForm({ ...form, items: [...form.items, { description: "", packages: "", weight_actual: "", weight_charged: "", rate: 0, freight: 0 }] })}><Plus className="w-3 h-3 mr-1" /> Add</Button>
+          <label className="text-sm font-semibold">Cargo Details</label>
+          <Button variant="outline" size="sm" onClick={() => setForm({ ...form, items: [...form.items, { description: "", packages: "", weight_actual: "", weight_charged: "", rate: "", freight: "" }] })}><Plus className="w-3 h-3 mr-1" /> Add Package</Button>
         </div>
         {form.items.map((item: any, idx: number) => (
           <div key={idx} className="grid grid-cols-12 gap-2 mb-2 items-end">
@@ -404,11 +460,24 @@ function LRCopyFields({ form, setForm }: { form: any; setForm: (f: any) => void 
             <div className="col-span-1"><Input placeholder="Pkgs" value={item.packages} onChange={e => updateItem(idx, "packages", e.target.value)} /></div>
             <div className="col-span-2"><Input placeholder="Wt Actual" value={item.weight_actual} onChange={e => updateItem(idx, "weight_actual", e.target.value)} /></div>
             <div className="col-span-2"><Input placeholder="Wt Charged" value={item.weight_charged} onChange={e => updateItem(idx, "weight_charged", e.target.value)} /></div>
-            <div className="col-span-2"><Input type="number" placeholder="Rate" value={item.rate} onChange={e => updateItem(idx, "rate", e.target.value)} /></div>
-            <div className="col-span-1 text-sm font-medium pt-2">₹{(parseFloat(item.freight) || 0).toLocaleString()}</div>
+            <div className="col-span-2"><Input type="text" placeholder="Rate" value={item.rate} onChange={e => updateItem(idx, "rate", e.target.value)} /></div>
+            <div className="col-span-1"><Input type="text" placeholder="Freight" value={item.freight} onChange={e => updateItem(idx, "freight", e.target.value)} /></div>
             <div className="col-span-1">{form.items.length > 1 && <Button variant="ghost" size="icon" onClick={() => setForm({ ...form, items: form.items.filter((_: any, i: number) => i !== idx) })}><Trash2 className="w-3 h-3" /></Button>}</div>
           </div>
         ))}
+      </div>
+
+      {/* Expenses / Charges Breakdown */}
+      <div className="border border-border rounded-lg p-3 space-y-3 bg-gray-50">
+        <h4 className="text-xs font-bold text-gray-700">Cost Breakdown (Alphanumeric allowed)</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div><label className="text-[10px] text-muted-foreground">Mazdoor Charges</label><Input className="h-8 text-xs" placeholder="e.g. 200 or Incl." value={form.mazdoor_charges || ''} onChange={e => setForm({ ...form, mazdoor_charges: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">Risk Charges</label><Input className="h-8 text-xs" placeholder="e.g. 500" value={form.risk_charges || ''} onChange={e => setForm({ ...form, risk_charges: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">SGST</label><Input className="h-8 text-xs" placeholder="e.g. 150" value={form.sgst || ''} onChange={e => setForm({ ...form, sgst: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">CGST</label><Input className="h-8 text-xs" placeholder="e.g. 150" value={form.cgst || ''} onChange={e => setForm({ ...form, cgst: e.target.value })} /></div>
+          <div><label className="text-[10px] text-muted-foreground">IGST</label><Input className="h-8 text-xs" placeholder="e.g. 300" value={form.igst || ''} onChange={e => setForm({ ...form, igst: e.target.value })} /></div>
+          <div className="col-span-3"><label className="text-[10px] text-muted-foreground">Any Other Charges</label><Input className="h-8 text-xs" placeholder="e.g. Toll, Octroi etc." value={form.other_charges || ''} onChange={e => setForm({ ...form, other_charges: e.target.value })} /></div>
+        </div>
       </div>
     </div>
   );

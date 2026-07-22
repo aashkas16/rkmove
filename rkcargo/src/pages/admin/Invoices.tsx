@@ -72,11 +72,13 @@ const AdminInvoices = () => {
       case "Bill":
         setForm({ ...base, from_location: "", to_location: "", vehicle_number: "", vehicle_type: "4 Wheeler", HSN_code: "9965", weight: "", rate: "", 
           particulars: [
-            { label: 'Freight', amount: '' },
-            { label: 'Loading charges', amount: '' },
-            { label: 'Unloding charges', amount: '' },
-            { label: 'Packing charges', amount: '' },
-            { label: 'Ins.', amount: '' },
+            { label: 'Transportation Charge', amount: '' },
+            { label: 'Packing Charge', amount: '' },
+            { label: 'Unpacking Charge', amount: '' },
+            { label: 'Loading Charge', amount: '' },
+            { label: 'Unloading Charge', amount: '' },
+            { label: 'Docket Charge', amount: '' },
+            { label: 'Others', amount: '' },
           ]
         });
         break;
@@ -570,9 +572,9 @@ function BillFields({ form, setForm }: { form: any; setForm: (f: any) => void })
                 <div className="col-span-8 text-xs font-semibold text-gray-700">{p.label}</div>
                 <div className="col-span-4">
                   <Input 
-                    type="number" 
+                    type="text" 
                     className="h-8 text-xs" 
-                    placeholder="0" 
+                    placeholder="e.g. 5000 or Incl." 
                     value={p.amount || ''} 
                     onChange={e => updateParticular(idx, 'amount', e.target.value)} 
                   />

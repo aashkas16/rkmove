@@ -385,24 +385,28 @@ function generateBill(data: DocData): string {
   const m = data.items?.meta || {};
   const items = Array.isArray(data.items?.line_items) ? data.items.line_items : (Array.isArray(data.items) ? data.items : []);
 
-  // Map the amounts from our 5 fixed fields:
-  // 1. Freight
-  // 2. Loading charges
-  // 3. Unloding charges
-  // 4. Packing charges
-  // 5. Ins.
-  const freightAmt = items.find((it: any) => it.label === 'Freight')?.amount || '';
-  const loadingAmt = items.find((it: any) => it.label === 'Loading charges')?.amount || '';
-  const unloadingAmt = items.find((it: any) => it.label === 'Unloding charges')?.amount || '';
-  const packingAmt = items.find((it: any) => it.label === 'Packing charges')?.amount || '';
-  const insAmt = items.find((it: any) => it.label === 'Ins.')?.amount || '';
+  // Map the amounts from our 7 fixed fields:
+  const transAmt = items.find((it: any) => it.label === 'Transportation Charge')?.amount || '';
+  const packingAmt = items.find((it: any) => it.label === 'Packing Charge')?.amount || '';
+  const unpackingAmt = items.find((it: any) => it.label === 'Unpacking Charge')?.amount || '';
+  const loadingAmt = items.find((it: any) => it.label === 'Loading Charge')?.amount || '';
+  const unloadingAmt = items.find((it: any) => it.label === 'Unloading Charge')?.amount || '';
+  const docketAmt = items.find((it: any) => it.label === 'Docket Charge')?.amount || '';
+  const othersAmt = items.find((it: any) => it.label === 'Others')?.amount || '';
 
   const gstPercent = parseFloat(data.gst_percent) || 0;
   const subtotal = data.subtotal || 0;
   const gstAmount = data.gst_amount || 0;
   const totalAmount = data.total_amount || 0;
 
-  const origin = window.location.origin;
+  const formatAmtVal = (val: any) => {
+    if (val === undefined || val === null || val === '') return '&nbsp;';
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      return '₹' + num.toLocaleString();
+    }
+    return String(val); // returns e.g. "Incl." or "Included"
+  };
 
   return `<!DOCTYPE html><html><head><title>Bill - ${data.invoice_number}</title>
 <style>
@@ -411,6 +415,10 @@ body{font-family:'Arial',sans-serif;color:#1a237e;padding:20px 30px;max-width:80
 @page{margin:10mm;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 table{border-collapse:collapse;width:100%;}
+.border-cell {
+  border: 1px solid #1a237e;
+  padding: 6px;
+}
 </style></head><body>
 
 <!-- INVOICE label & MOB -->
@@ -456,89 +464,100 @@ table{border-collapse:collapse;width:100%;}
 <table style="border:2px solid #1a237e;width:100%;">
   <thead>
     <tr style="background:#f0f0f8;">
-      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:8%;text-align:center;">Sr.No.</th>
-      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:45%;text-align:center;">Particulars</th>
-      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:10%;text-align:center;">HSN Code</th>
-      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:9%;text-align:center;">Weight</th>
-      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:10%;text-align:center;">Rate</th>
-      <th style="border:1px solid #1a237e;padding:6px;font-size:11px;font-weight:bold;width:18%;text-align:center;">Amount</th>
+      <th class="border-cell" style="width:8%;text-align:center;">Sr.No.</th>
+      <th class="border-cell" style="width:45%;text-align:center;">Particulars</th>
+      <th class="border-cell" style="width:10%;text-align:center;">HSN Code</th>
+      <th class="border-cell" style="width:9%;text-align:center;">Weight</th>
+      <th class="border-cell" style="width:10%;text-align:center;">Rate</th>
+      <th class="border-cell" style="width:18%;text-align:center;">Amount</th>
     </tr>
   </thead>
   <tbody>
+    <!-- Row 1: Main Particulars & Left Columns + HSN/Weight/Rate values and Transportation Charge -->
     <tr>
-      <!-- Column 1: Sr.No. -->
-      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-weight:bold;">1</td>
-      
-      <!-- Column 2: Particulars -->
-      <td style="border-right:1px solid #1a237e;padding:12px 10px;vertical-align:top;line-height:1.8;font-size:11px;">
+      <td class="border-cell" rowspan="7" style="text-align:center;vertical-align:top;font-weight:bold;">1</td>
+      <td class="border-cell" rowspan="7" style="vertical-align:top;line-height:1.6;font-size:11px;">
         <div style="font-weight:bold;margin-bottom:8px;text-decoration:underline;">Being the Transportation of your Household goods</div>
-        <div style="margin-bottom:6px;">From: <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.from_location || ''}</span></div>
-        <div style="margin-bottom:6px;">To: <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.to_location || ''}</span></div>
-        <div style="margin-bottom:6px;">Vehicle No.: <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;">${m.vehicle_number || ''}</span></div>
-        <div style="display:flex;gap:12px;margin-top:10px;font-weight:bold;">
+        <div style="margin-bottom:6px;">From <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;display:inline-block;min-width:200px;">${m.from_location || ''}</span></div>
+        <div style="margin-bottom:6px;">To <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;display:inline-block;min-width:200px;">${m.to_location || ''}</span></div>
+        <div style="margin-bottom:12px;">Vehicle No. <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;display:inline-block;min-width:180px;">${m.vehicle_number || ''}</span></div>
+        <div style="display:flex;gap:20px;font-weight:bold;margin-bottom:20px;">
           <span>[${m.vehicle_type === '2 Wheeler' ? '✔' : ' '}] 2 Wheeler</span>
           <span>[${m.vehicle_type === '4 Wheeler' ? '✔' : ' '}] 4 Wheeler</span>
         </div>
-        <div style="margin-top:40px;font-size:10px;color:#333;">
+        <div style="margin-top:50px;font-size:10px;color:#333;">
           <div style="font-weight:bold;">PAN No.: <span style="color:#ef4444;">AAOFK7219H</span></div>
           <div style="font-weight:bold;margin-top:2px;">GSTIN : <span style="color:#ef4444;">24ARXPP9693E1ZV</span></div>
         </div>
       </td>
-      
-      <!-- Column 3: HSN Code -->
-      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-weight:bold;font-size:11px;">
-        ${m.HSN_code || '9965'}
+      <td class="border-cell" style="text-align:center;vertical-align:top;font-weight:bold;">${m.HSN_code || '9965'}</td>
+      <td class="border-cell" style="text-align:center;vertical-align:top;">${m.weight || ''}</td>
+      <td class="border-cell" style="text-align:center;vertical-align:top;">${m.rate || ''}</td>
+      <td class="border-cell" style="text-align:right;vertical-align:top;">${formatAmtVal(transAmt)}</td>
+    </tr>
+    <!-- Row 2: Transportation Charge Label row (spanned) -->
+    <tr>
+      <td class="border-cell" colspan="3" style="font-weight:bold;">Transportation Charge</td>
+      <td class="border-cell" style="text-align:right;font-weight:bold;">${formatAmtVal(transAmt)}</td>
+    </tr>
+    <!-- Row 3: AT REIMBURSEMENT header -->
+    <tr>
+      <td class="border-cell" colspan="4" style="color:#ea580c;text-align:center;font-weight:bold;font-size:11px;background:#fef2f2;">AT REIMBURSEMENT</td>
+    </tr>
+    <!-- Row 4: Packing Charge -->
+    <tr>
+      <td class="border-cell" colspan="3">Packing Charge</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(packingAmt)}</td>
+    </tr>
+    <!-- Row 5: Unpacking Charge -->
+    <tr>
+      <td class="border-cell" colspan="3">Unpacking Charge</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(unpackingAmt)}</td>
+    </tr>
+    <!-- Row 6: Loading Charge -->
+    <tr>
+      <td class="border-cell" colspan="3">Loading Charge</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(loadingAmt)}</td>
+    </tr>
+    <!-- Row 7: Unloading Charge -->
+    <tr>
+      <td class="border-cell" colspan="3">Unloading Charge</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(unloadingAmt)}</td>
+    </tr>
+    
+    <!-- Row 8: GST Payable by Party / Docket Charge -->
+    <tr>
+      <td class="border-cell" colspan="2" style="font-weight:bold;vertical-align:middle;">GST Payable by: PARTY</td>
+      <td class="border-cell" colspan="3">Docket Charge</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(docketAmt)}</td>
+    </tr>
+    
+    <!-- Row 9: Rupees (words) / Others -->
+    <tr>
+      <td class="border-cell" colspan="2" rowspan="${gstPercent > 0 ? 4 : 2}" style="vertical-align:top;line-height:1.6;">
+        <div style="font-weight:bold;">Rupees:</div>
+        <div style="font-style:italic;font-weight:bold;margin-top:4px;word-break:break-word;max-width:350px;">${data.notes || ''}</div>
       </td>
-      
-      <!-- Column 4: Weight -->
-      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-size:11px;">
-        ${m.weight || ''}
-      </td>
-      
-      <!-- Column 5: Rate -->
-      <td style="border-right:1px solid #1a237e;padding:12px 6px;vertical-align:top;text-align:center;font-size:11px;">
-        ${m.rate || ''}
-      </td>
-      
-      <!-- Column 6: Right Side Charges Breakdown Table -->
-      <td style="padding:0;vertical-align:top;font-size:11px;">
-        <table style="width:100%;height:100%;border-collapse:collapse;">
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;width:60%;">Freight</td>
-            <td style="padding:6px;text-align:right;">${freightAmt ? '₹' + Number(freightAmt).toLocaleString() : ''}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;">Packing charges</td>
-            <td style="padding:6px;text-align:right;">${packingAmt ? '₹' + Number(packingAmt).toLocaleString() : ''}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;">Loading charges</td>
-            <td style="padding:6px;text-align:right;">${loadingAmt ? '₹' + Number(loadingAmt).toLocaleString() : ''}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;">Unloading charges</td>
-            <td style="padding:6px;text-align:right;">${unloadingAmt ? '₹' + Number(unloadingAmt).toLocaleString() : ''}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;">Ins.</td>
-            <td style="padding:6px;text-align:right;">${insAmt ? '₹' + Number(insAmt).toLocaleString() : ''}</td>
-          </tr>
-          ${gstPercent > 0 ? `
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;">Subtotal</td>
-            <td style="padding:6px;text-align:right;font-weight:bold;">₹${Number(subtotal).toLocaleString()}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1a237e;">
-            <td style="padding:6px;border-right:1px solid #1a237e;">GST (${gstPercent}%)</td>
-            <td style="padding:6px;text-align:right;font-weight:bold;">₹${Number(gstAmount).toLocaleString()}</td>
-          </tr>
-          ` : ''}
-          <tr style="background:#f0f0f8;font-weight:bold;font-size:12px;">
-            <td style="padding:8px 6px;border-right:1px solid #1a237e;">Total</td>
-            <td style="padding:8px 6px;text-align:right;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
-          </tr>
-        </table>
-      </td>
+      <td class="border-cell" colspan="3">Others</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(othersAmt)}</td>
+    </tr>
+    
+    <!-- Optional Subtotal & GST rows if GST percent > 0 -->
+    ${gstPercent > 0 ? `
+    <tr>
+      <td class="border-cell" colspan="3" style="font-weight:semibold;">Subtotal</td>
+      <td class="border-cell" style="text-align:right;font-weight:semibold;">₹${Number(subtotal).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <td class="border-cell" colspan="3" style="font-weight:semibold;">GST (${gstPercent}%)</td>
+      <td class="border-cell" style="text-align:right;font-weight:semibold;">₹${Number(gstAmount).toLocaleString()}</td>
+    </tr>
+    ` : ''}
+
+    <!-- Row 10: Total -->
+    <tr style="background:#f0f0f8;font-weight:bold;font-size:12px;">
+      <td class="border-cell" colspan="3">Total</td>
+      <td class="border-cell" style="text-align:right;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
     </tr>
   </tbody>
 </table>
@@ -547,8 +566,6 @@ table{border-collapse:collapse;width:100%;}
 <table style="width:100%;margin-top:12px;font-size:11px;">
   <tr>
     <td style="width:55%;vertical-align:top;line-height:1.6;">
-      <div style="font-weight:bold;font-size:11px;margin-bottom:6px;">GST Payable by: <span style="text-decoration:underline;">PARTY</span></div>
-      <div style="margin-bottom:10px;">Rupees <span style="border-bottom:1px solid #555;display:inline-block;width:80%;padding:0 4px;font-weight:bold;font-style:italic;">${data.notes || ''}</span></div>
       <div style="font-size:10px;color:#444;margin-top:10px;">
         1. Interest @ 18% p.a. will be charged extra, if payment is not received on or before due date.<br/>
         2. Subject to Ahmedabad Jurisdiction.

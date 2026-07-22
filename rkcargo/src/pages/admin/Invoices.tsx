@@ -520,7 +520,7 @@ function QuotationFields({ form, setForm, isQuotation = false }: { form: any; se
                   )}
                 </div>
                 <div className="col-span-4">
-                  <Input type="number" className="h-7 text-xs" placeholder="0" value={p.amount || ''} onChange={e => updateParticular(idx, 'amount', e.target.value)} />
+                  <Input type="text" className="h-7 text-xs" placeholder="e.g. 5000 or Incl." value={p.amount || ''} onChange={e => updateParticular(idx, 'amount', e.target.value)} />
                 </div>
               </div>
             ))}
@@ -547,7 +547,7 @@ function QuotationFields({ form, setForm, isQuotation = false }: { form: any; se
             ))}
           </div>
           <div className="grid grid-cols-2 gap-3 mt-3">
-            <div><label className="text-xs text-muted-foreground">Total Amount</label><Input type="number" value={form.notes_amount || ""} onChange={e => setForm({ ...form, notes_amount: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground">Total Amount</label><Input type="text" value={form.notes_amount || ""} onChange={e => setForm({ ...form, notes_amount: e.target.value })} /></div>
             <div><label className="text-xs text-muted-foreground">Notes</label><Input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
         </div>

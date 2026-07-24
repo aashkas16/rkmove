@@ -72,13 +72,11 @@ const AdminInvoices = () => {
       case "Bill":
         setForm({ ...base, from_location: "", to_location: "", vehicle_number: "", vehicle_type: "4 Wheeler", HSN_code: "9965", weight: "", rate: "", 
           particulars: [
-            { label: 'Transportation Charge', amount: '' },
-            { label: 'Packing Charge', amount: '' },
-            { label: 'Unpacking Charge', amount: '' },
-            { label: 'Loading Charge', amount: '' },
-            { label: 'Unloading Charge', amount: '' },
-            { label: 'Docket Charge', amount: '' },
-            { label: 'Others', amount: '' },
+            { label: 'Freight', amount: '' },
+            { label: 'Loading charges', amount: '' },
+            { label: 'Unloding charges', amount: '' },
+            { label: 'Packing charges', amount: '' },
+            { label: 'Ins.', amount: '' },
           ]
         });
         break;

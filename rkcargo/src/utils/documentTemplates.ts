@@ -425,14 +425,12 @@ function generateBill(data: DocData): string {
   const m = data.items?.meta || {};
   const items = Array.isArray(data.items?.line_items) ? data.items.line_items : (Array.isArray(data.items) ? data.items : []);
 
-  // Map the amounts from our 7 fixed fields:
-  const transAmt = items.find((it: any) => it.label === 'Transportation Charge')?.amount || '';
-  const packingAmt = items.find((it: any) => it.label === 'Packing Charge')?.amount || '';
-  const unpackingAmt = items.find((it: any) => it.label === 'Unpacking Charge')?.amount || '';
-  const loadingAmt = items.find((it: any) => it.label === 'Loading Charge')?.amount || '';
-  const unloadingAmt = items.find((it: any) => it.label === 'Unloading Charge')?.amount || '';
-  const docketAmt = items.find((it: any) => it.label === 'Docket Charge')?.amount || '';
-  const othersAmt = items.find((it: any) => it.label === 'Others')?.amount || '';
+  // Map the amounts from our 5 fixed fields:
+  const freightAmt = items.find((it: any) => it.label === 'Freight')?.amount || '';
+  const loadingAmt = items.find((it: any) => it.label === 'Loading charges')?.amount || '';
+  const unloadingAmt = items.find((it: any) => it.label === 'Unloding charges')?.amount || '';
+  const packingAmt = items.find((it: any) => it.label === 'Packing charges')?.amount || '';
+  const insAmt = items.find((it: any) => it.label === 'Ins.')?.amount || '';
 
   const gstPercent = parseFloat(data.gst_percent) || 0;
   const subtotal = data.subtotal || 0;
@@ -511,12 +509,10 @@ table{border-collapse:collapse;width:100%;}
       <th class="border-cell" style="width:10%;text-align:center;">Rate</th>
       <th class="border-cell" style="width:18%;text-align:center;">Amount</th>
     </tr>
-  </thead>
-  <tbody>
-    <!-- Row 1: Main Particulars & Left Columns + HSN/Weight/Rate values and Transportation Charge -->
+  </t    <!-- Row 1: Main Particulars & Left Columns + HSN/Weight/Rate values and Freight Charge -->
     <tr>
-      <td class="border-cell" rowspan="7" style="text-align:center;vertical-align:top;font-weight:bold;">1</td>
-      <td class="border-cell" rowspan="7" style="vertical-align:top;line-height:1.6;font-size:11px;">
+      <td class="border-cell" rowspan="5" style="text-align:center;vertical-align:top;font-weight:bold;">1</td>
+      <td class="border-cell" rowspan="5" style="vertical-align:top;line-height:1.6;font-size:11px;">
         <div style="font-weight:bold;margin-bottom:8px;text-decoration:underline;">Being the Transportation of your Household goods</div>
         <div style="margin-bottom:6px;">From <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;display:inline-block;min-width:200px;">${m.from_location || ''}</span></div>
         <div style="margin-bottom:6px;">To <span style="font-weight:bold;border-bottom:1px solid #555;padding:0 4px;display:inline-block;min-width:200px;">${m.to_location || ''}</span></div>
@@ -533,72 +529,55 @@ table{border-collapse:collapse;width:100%;}
       <td class="border-cell" style="text-align:center;vertical-align:top;font-weight:bold;">${m.HSN_code || '9965'}</td>
       <td class="border-cell" style="text-align:center;vertical-align:top;">${m.weight || ''}</td>
       <td class="border-cell" style="text-align:center;vertical-align:top;">${m.rate || ''}</td>
-      <td class="border-cell" style="text-align:right;vertical-align:top;">${formatAmtVal(transAmt)}</td>
+      <td class="border-cell" style="text-align:right;vertical-align:top;">${formatAmtVal(freightAmt)}</td>
     </tr>
-    <!-- Row 2: Transportation Charge Label row (spanned) -->
+    <!-- Row 2: Loading charges -->
     <tr>
-      <td class="border-cell" colspan="3" style="font-weight:bold;">Transportation Charge</td>
-      <td class="border-cell" style="text-align:right;font-weight:bold;">${formatAmtVal(transAmt)}</td>
-    </tr>
-    <!-- Row 3: AT REIMBURSEMENT header -->
-    <tr>
-      <td class="border-cell" colspan="4" style="color:#ea580c;text-align:center;font-weight:bold;font-size:11px;background:#fef2f2;">AT REIMBURSEMENT</td>
-    </tr>
-    <!-- Row 4: Packing Charge -->
-    <tr>
-      <td class="border-cell" colspan="3">Packing Charge</td>
-      <td class="border-cell" style="text-align:right;">${formatAmtVal(packingAmt)}</td>
-    </tr>
-    <!-- Row 5: Unpacking Charge -->
-    <tr>
-      <td class="border-cell" colspan="3">Unpacking Charge</td>
-      <td class="border-cell" style="text-align:right;">${formatAmtVal(unpackingAmt)}</td>
-    </tr>
-    <!-- Row 6: Loading Charge -->
-    <tr>
-      <td class="border-cell" colspan="3">Loading Charge</td>
+      <td class="border-cell" colspan="3" style="font-weight:semibold;">Loading charges</td>
       <td class="border-cell" style="text-align:right;">${formatAmtVal(loadingAmt)}</td>
     </tr>
-    <!-- Row 7: Unloading Charge -->
+    <!-- Row 3: Unloding charges -->
     <tr>
-      <td class="border-cell" colspan="3">Unloading Charge</td>
+      <td class="border-cell" colspan="3" style="font-weight:semibold;">Unloding charges</td>
       <td class="border-cell" style="text-align:right;">${formatAmtVal(unloadingAmt)}</td>
     </tr>
-    
-    <!-- Row 8: GST Payable by Party / Docket Charge -->
+    <!-- Row 4: Packing charges -->
     <tr>
-      <td class="border-cell" colspan="2" style="font-weight:bold;vertical-align:middle;">GST Payable by: PARTY</td>
-      <td class="border-cell" colspan="3">Docket Charge</td>
-      <td class="border-cell" style="text-align:right;">${formatAmtVal(docketAmt)}</td>
+      <td class="border-cell" colspan="3" style="font-weight:semibold;">Packing charges</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(packingAmt)}</td>
+    </tr>
+    <!-- Row 5: Ins. -->
+    <tr>
+      <td class="border-cell" colspan="3" style="font-weight:semibold;">Ins.</td>
+      <td class="border-cell" style="text-align:right;">${formatAmtVal(insAmt)}</td>
     </tr>
     
-    <!-- Row 9: Rupees (words) / Others -->
+    <!-- Row 6: Rupees Words & GST Payable on left, Subtotal/GST/Total on right -->
     <tr>
-      <td class="border-cell" colspan="2" rowspan="${gstPercent > 0 ? 4 : 2}" style="vertical-align:top;line-height:1.6;">
-        <div style="font-weight:bold;">Rupees:</div>
+      <td class="border-cell" colspan="2" rowspan="${gstPercent > 0 ? 3 : 1}" style="vertical-align:top;line-height:1.6;">
+        <div style="font-weight:bold;margin-bottom:6px;">GST Payable by: PARTY</div>
+        <div style="font-weight:bold;">Rupees (in words):</div>
         <div style="font-style:italic;font-weight:bold;margin-top:4px;word-break:break-word;max-width:350px;">${data.notes || ''}</div>
       </td>
-      <td class="border-cell" colspan="3">Others</td>
-      <td class="border-cell" style="text-align:right;">${formatAmtVal(othersAmt)}</td>
+      ${gstPercent > 0 ? `
+        <td class="border-cell" colspan="3" style="font-weight:semibold;">Subtotal</td>
+        <td class="border-cell" style="text-align:right;font-weight:semibold;">₹${Number(subtotal).toLocaleString()}</td>
+      ` : `
+        <td class="border-cell" colspan="3" style="font-weight:bold;background:#f0f0f8;">Total</td>
+        <td class="border-cell" style="text-align:right;font-weight:bold;background:#f0f0f8;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
+      `}
     </tr>
     
-    <!-- Optional Subtotal & GST rows if GST percent > 0 -->
     ${gstPercent > 0 ? `
-    <tr>
-      <td class="border-cell" colspan="3" style="font-weight:semibold;">Subtotal</td>
-      <td class="border-cell" style="text-align:right;font-weight:semibold;">₹${Number(subtotal).toLocaleString()}</td>
-    </tr>
     <tr>
       <td class="border-cell" colspan="3" style="font-weight:semibold;">GST (${gstPercent}%)</td>
       <td class="border-cell" style="text-align:right;font-weight:semibold;">₹${Number(gstAmount).toLocaleString()}</td>
     </tr>
-    ` : ''}
-
-    <!-- Row 10: Total -->
-    <tr style="background:#f0f0f8;font-weight:bold;font-size:12px;">
-      <td class="border-cell" colspan="3">Total</td>
-      <td class="border-cell" style="text-align:right;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
+    <tr>
+      <td class="border-cell" colspan="3" style="font-weight:bold;background:#f0f0f8;">Total</td>
+      <td class="border-cell" style="text-align:right;font-weight:bold;background:#f0f0f8;color:#ea580c;">₹${Number(totalAmount).toLocaleString()}</td>
     </tr>
+    ` : ''}
   </tbody>
 </table>
 

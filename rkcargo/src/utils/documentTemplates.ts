@@ -28,8 +28,16 @@ const dots = (n: number) => '.'.repeat(n);
 
 // ===================== PAGE 1: LR COPY =====================
 function generateLRCopy(data: DocData): string {
-  const m = data.items?.meta || {};
-  const items = Array.isArray(data.items?.line_items) ? data.items.line_items : [];
+  let itemsObj = data.items;
+  if (typeof itemsObj === 'string') {
+    try {
+      itemsObj = JSON.parse(itemsObj);
+    } catch (e) {
+      itemsObj = {};
+    }
+  }
+  const m = itemsObj?.meta || {};
+  const items = Array.isArray(itemsObj?.line_items) ? itemsObj.line_items : (Array.isArray(itemsObj) ? itemsObj : []);
 
   const freightSum = items.reduce((s: number, i: any) => s + (parseFloat(i.freight) || 0), 0);
   const totalAmount = data.total_amount || 0;
@@ -225,7 +233,15 @@ table{border-collapse:collapse;width:100%;}
 
 // ===================== PAGE 3: QUOTATION FRONT (Portrait) =====================
 function generateQuotationFront(data: DocData): string {
-  const m = data.items?.meta || {};
+  let itemsObj = data.items;
+  if (typeof itemsObj === 'string') {
+    try {
+      itemsObj = JSON.parse(itemsObj);
+    } catch (e) {
+      itemsObj = {};
+    }
+  }
+  const m = itemsObj?.meta || {};
 
   const particulars = [
     'i) Packing Charges - (with men and material)',
@@ -367,7 +383,15 @@ ${generateQuotationFront(data)}
 
 // ===================== PAGE 4: MONEY RECEIPT =====================
 function generateMoneyReceipt(data: DocData): string {
-  const m = data.items?.meta || {};
+  let itemsObj = data.items;
+  if (typeof itemsObj === 'string') {
+    try {
+      itemsObj = JSON.parse(itemsObj);
+    } catch (e) {
+      itemsObj = {};
+    }
+  }
+  const m = itemsObj?.meta || {};
 
   return `<!DOCTYPE html><html><head><title>Money Receipt - ${data.invoice_number}</title>
 <style>
@@ -422,8 +446,16 @@ body{font-family:'Arial',sans-serif;color:#1a237e;padding:30px 40px;max-width:70
 
 // ===================== PAGE 5: BILL =====================
 function generateBill(data: DocData): string {
-  const m = data.items?.meta || {};
-  const items = Array.isArray(data.items?.line_items) ? data.items.line_items : (Array.isArray(data.items) ? data.items : []);
+  let itemsObj = data.items;
+  if (typeof itemsObj === 'string') {
+    try {
+      itemsObj = JSON.parse(itemsObj);
+    } catch (e) {
+      itemsObj = {};
+    }
+  }
+  const m = itemsObj?.meta || {};
+  const items = Array.isArray(itemsObj?.line_items) ? itemsObj.line_items : (Array.isArray(itemsObj) ? itemsObj : []);
 
   // Map the amounts from our 5 fixed fields:
   const freightAmt = items.find((it: any) => it.label === 'Freight')?.amount || '';
@@ -618,8 +650,16 @@ function buildArticleGrid(articles: any[]): string {
 
 // ===================== PAGE 6: PACKING LIST =====================
 function generatePackingList(data: DocData): string {
-  const m = data.items?.meta || {};
-  const articles = Array.isArray(data.items?.line_items) ? data.items.line_items : [];
+  let itemsObj = data.items;
+  if (typeof itemsObj === 'string') {
+    try {
+      itemsObj = JSON.parse(itemsObj);
+    } catch (e) {
+      itemsObj = {};
+    }
+  }
+  const m = itemsObj?.meta || {};
+  const articles = Array.isArray(itemsObj?.line_items) ? itemsObj.line_items : (Array.isArray(itemsObj) ? itemsObj : []);
 
   return `<!DOCTYPE html><html><head><title>Packing List - ${data.invoice_number}</title>
 <style>
